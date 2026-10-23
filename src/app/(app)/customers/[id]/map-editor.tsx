@@ -16,9 +16,10 @@ import {
   type OnDelete,
   type NodeChange,
 } from "@xyflow/react";
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useRef, useState, type DragEvent } from "react";
 import { DeviceIcon } from "@/components/device-icon";
 import { collapseSpaces } from "@/lib/customers/input";
+import type { DeviceAlerts } from "@/lib/devices/records";
 import {
   CONNECTION_LABEL_MAX_LENGTH,
   DEVICE_NAME_MAX_LENGTH,
@@ -35,9 +36,9 @@ import {
   moveDevices,
   updateConnection,
   updateDevice,
-  type MapActionResult,
 } from "./map-actions";
-import { DeviceSheet, type Save } from "./device-sheet";
+import { SaveStatus, useAutosave } from "./autosave";
+import { DeviceSheet } from "./device-sheet";
 import {
   ConnectionEdgeView,
   DeviceNodeView,
@@ -69,7 +70,8 @@ const ariaLabelConfig = {
 const DRAG_TYPE = "application/x-device-type";
 // About half a device box, so a new device lands centred where it is dropped.
 const NODE_HALF_SIZE = { x: 56, y: 36 };
-const SAVE_FAILED = "No se pudo guardar el último cambio. Revisá la conexión y recargá la página.";
+
+const NO_ALERTS: DeviceAlerts = { openIncidents: 0, nextDueAt: null };
 
 // Room taken by a device on the map, a bit more than its box.
 const SLOT = { x: 140, y: 110 };
@@ -91,7 +93,7 @@ function toNode(device: CustomerMap["devices"][number]): DeviceNode {
     id: device.id,
     type: "device",
     position: { x: device.positionX, y: device.positionY },
-    data: { name: device.name, type: device.type },
+    data: { name: device.name, type: device.type, alerts: device.alerts },
     ariaLabel: device.name,
   };
 }
@@ -105,41 +107,6 @@ function toEdge(connection: CustomerMap["connections"][number]): ConnectionEdge 
     data: { label: connection.label },
     ariaLabel: connection.label ? `Conexión ${connection.label}` : "Conexión",
   };
-}
-
-// Changes are saved one after the other, in the order they were made: a
-// connection is never sent before the device it points to.
-function useAutosave() {
-  const queue = useRef<Promise<void>>(Promise.resolve());
-  const [pending, setPending] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-
-  // Resolves with the action's result, or undefined when the request failed.
-  const save: Save = useCallback(<T extends MapActionResult>(run: () => Promise<T>) => {
-    setPending((count) => count + 1);
-    const done = queue.current.then(run).then(
-      (result) => {
-        if (result.error) setError(result.error);
-        return result;
-      },
-      () => {
-        setError(SAVE_FAILED);
-        return undefined;
-      },
-    );
-    queue.current = done.then(() => setPending((count) => count - 1));
-    return done;
-  }, []);
-
-  // Leaving while a change is on its way would lose it.
-  useEffect(() => {
-    if (pending === 0) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [pending]);
-
-  return { save, saving: pending > 0, error };
 }
 
 export function MapEditor(props: { customerId: string; map: CustomerMap }) {
@@ -168,7 +135,14 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
     const position = { x: Math.round(at.x), y: Math.round(at.y) };
     setNodes((current) => [
       ...current.map((node) => ({ ...node, selected: false })),
-      { id, type: "device", position, data: { name, type }, ariaLabel: name, selected: true },
+      {
+        id,
+        type: "device",
+        position,
+        data: { name, type, alerts: NO_ALERTS },
+        ariaLabel: name,
+        selected: true,
+      },
     ]);
     setEdges((current) => current.map((edge) => ({ ...edge, selected: false })));
     save(() => createDevice(customerId, { id, type, name, ...position }));
@@ -259,10 +233,17 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
 
   const saveDevice = (id: string, data: { name: string; type: DeviceType }) => {
     setNodes((current) =>
-      current.map((node) => (node.id === id ? { ...node, data, ariaLabel: data.name } : node)),
+      current.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, ...data }, ariaLabel: data.name } : node,
+      ),
     );
     save(() => updateDevice(customerId, { id, ...data }));
   };
+
+  const updateAlerts = (id: string, alerts: DeviceAlerts) =>
+    setNodes((current) =>
+      current.map((node) => (node.id === id ? { ...node, data: { ...node.data, alerts } } : node)),
+    );
 
   const relabelConnection = (id: string, label: string) =>
     setEdges((current) =>
@@ -363,6 +344,7 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
             save={save}
             status={<SaveStatus saving={saving} error={error} />}
             onClose={closeSheet}
+            onAlertsChange={(alerts) => updateAlerts(sheetNode.id, alerts)}
           />
         ) : (
           <div className="absolute top-2 right-2 flex max-w-72 flex-col items-end gap-2">
@@ -393,24 +375,6 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
   );
 }
 
-function SaveStatus({ saving, error }: { saving: boolean; error: string | null }) {
-  if (error) {
-    return (
-      <p role="alert" className="rounded-md bg-red-50 px-3 py-1.5 text-sm text-red-700 shadow-sm">
-        {error}
-      </p>
-    );
-  }
-  return (
-    <p
-      role="status"
-      className="rounded-md bg-white/90 px-2 py-1 text-xs text-neutral-600 shadow-sm"
-    >
-      {saving ? "Guardando…" : "Guardado"}
-    </p>
-  );
-}
-
 const panelClass =
   "flex w-64 flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-3 shadow-md";
 const fieldClass =
@@ -434,7 +398,7 @@ function DevicePanel({
   onOpen: () => void;
   onDelete: () => void;
 }) {
-  const saved = useRef(node.data);
+  const saved = useRef({ name: node.data.name, type: node.data.type });
   const [name, setName] = useState(node.data.name);
 
   const commit = (type: DeviceType) => {

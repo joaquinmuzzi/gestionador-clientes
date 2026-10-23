@@ -37,11 +37,15 @@ Available now:
 - Device sheets opened with a double click: unlimited free fields and secret fields.
 - Screenshots and images on each device and customer (pasted with Ctrl+V, dropped or uploaded),
   stored encrypted.
+- On each device sheet, incidents (what happened and how it was solved), known vulnerabilities
+  with a severity, and an agenda of dated tasks. A device with an open incident or an overdue
+  task is marked on the map.
+- The end users of each customer: role, contact, technical level, what they may touch and how
+  to deal with them.
 - Application-level encryption (AES-256-GCM) for every secret and every image.
 - Runs on your own server with Docker Compose.
 
-Planned for the first version: incidents, vulnerabilities, an agenda, end-user profiles and a global
-search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
+Planned for the first version: a global search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
 
 The interface is in Spanish.
 

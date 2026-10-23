@@ -14,11 +14,13 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import { DeviceIcon } from "@/components/device-icon";
+import { attentionReasons, type DeviceAlerts } from "@/lib/devices/records";
 import type { DeviceType } from "@/lib/map/input";
+import { useToday } from "./device-records";
 
 // How devices and connections are drawn on the map.
 
-export type DeviceNode = Node<{ name: string; type: DeviceType }, "device">;
+export type DeviceNode = Node<{ name: string; type: DeviceType; alerts: DeviceAlerts }, "device">;
 export type ConnectionEdge = Edge<{ label: string }, "connection">;
 
 // The handles only start a connection: where an edge is drawn is worked out
@@ -31,14 +33,24 @@ const HANDLES = [
 ];
 
 export function DeviceNodeView({ data, selected }: NodeProps<DeviceNode>) {
+  const reasons = attentionReasons(data.alerts, useToday());
   return (
     <div
       className={
-        "group flex w-28 flex-col items-center gap-1 rounded-lg border bg-white px-2 py-2 " +
+        "group relative flex w-28 flex-col items-center gap-1 rounded-lg border bg-white px-2 py-2 " +
         "text-center shadow-sm " +
         (selected ? "border-neutral-900 ring-2 ring-neutral-900" : "border-neutral-300")
       }
     >
+      {/* Open incidents or overdue tasks, seen without opening the sheet. */}
+      {reasons.length > 0 && (
+        <span
+          role="img"
+          aria-label={`Requiere atención: ${reasons.join(", ")}`}
+          title={`Requiere atención: ${reasons.join(", ")}`}
+          className="absolute -top-1.5 -right-1.5 size-3.5 rounded-full bg-red-600 ring-2 ring-white"
+        />
+      )}
       <DeviceIcon type={data.type} className="size-9 text-neutral-800" />
       <span className="w-full text-xs leading-tight font-medium break-words text-neutral-900">
         {data.name}

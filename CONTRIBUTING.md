@@ -57,9 +57,10 @@ The tests are organised like this:
   and every relative link leads to a file or heading that exists.
 - `e2e/` holds the **end-to-end tests** (Playwright): redirects without a session, security
   headers, login and logout, the session cookie, the idle timeout, the generic login error, TOTP
-  replay, the rate limit, the customer pages, the map editor and the rules the database
-  enforces (secret fields, connections between customers). They create their own user (`e2e@example.test`) and use
-  documentation IPs (`192.0.2.x`), so they do not touch your development data.
+  replay, the rate limit, the customer pages, the map editor, the device sheet, attachments,
+  incidents, vulnerabilities, the agenda, end users and the rules the database enforces (secret
+  fields, connections between customers). They create their own user (`e2e@example.test`) and
+  use documentation IPs (`192.0.2.x`), so they do not touch your development data.
 
 When you fix a bug, add a test that fails without the fix, and say in the description how you
 reproduced and checked it.
