@@ -1,46 +1,46 @@
 # Backups
 
-Gabriel's rule: a main copy, a local copy and a cloud copy, and restores that are actually tested
-from time to time. This is how the app follows it.
+La regla del usuario: una copia principal, una copia local y una copia en la nube, y
+restauraciones que de verdad se prueban cada tanto. Así la cumple la app.
 
-| Copy | Where | What |
+| Copia | Dónde | Qué |
 |---|---|---|
-| Main | The server: the `db-data` and `attachments` Docker volumes | The live data |
-| Local | `BACKUP_LOCAL_DIR`: another disk or a NAS mounted on the server | A restic repository |
-| Cloud | `BACKUP_CLOUD_REPOSITORY`: a bucket (Backblaze B2 or any S3-compatible storage) | A restic repository |
+| Principal | El servidor: los volúmenes Docker `db-data` y `attachments` | Los datos en uso |
+| Local | `BACKUP_LOCAL_DIR`: otro disco o un NAS montado en el servidor | Un repositorio de restic |
+| Nube | `BACKUP_CLOUD_REPOSITORY`: un bucket (Backblaze B2 o cualquier almacenamiento compatible con S3) | Un repositorio de restic |
 
-Every night a backup dumps the database (`pg_dump`) and copies the dump, together with the
-screenshot files, to both repositories with [restic](https://restic.net/). restic encrypts
-everything with `RESTIC_PASSWORD`, only uploads what changed, and keeps 7 daily, 4 weekly and 6
-monthly copies. Once a month a restore test puts the latest copy into a throwaway database and
-checks that every secret and every screenshot still decrypts.
+Todas las noches un backup vuelca la base de datos (`pg_dump`) y copia ese volcado, junto con los
+archivos de las capturas, a los dos repositorios con [restic](https://restic.net/). restic cifra
+todo con `RESTIC_PASSWORD`, solo sube lo que cambió y guarda 7 copias diarias, 4 semanales y 6
+mensuales. Una vez por mes una prueba de restauración carga la última copia en una base de datos
+descartable y verifica que todos los secretos y todas las capturas se sigan descifrando.
 
-## What is not in the backups
+## Lo que no está en los backups
 
-Three things live outside the backups on purpose, so that a stolen backup is useless:
+Tres cosas quedan fuera de los backups a propósito, para que un backup robado no sirva de nada:
 
-- `ENCRYPTION_KEY`: without it no secret field or screenshot can be decrypted, even with a perfect
-  backup.
-- `RESTIC_PASSWORD`: without it the backups cannot be opened.
-- The cloud keys (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
+- `ENCRYPTION_KEY`: sin ella no se puede descifrar ningún campo secreto ni captura, aunque el
+  backup esté perfecto.
+- `RESTIC_PASSWORD`: sin ella no se pueden abrir los backups.
+- Las claves de la nube (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
 
-Keep them in a password manager **and** on a printed sheet in a safe place (not on the server).
-When you write them down, check them against `.env` character by character: losing them, or a
-typo, means losing everything.
+Guardalas en un gestor de contraseñas **y** en una hoja impresa en un lugar seguro (no en el
+servidor). Cuando las anotes, comparalas con `.env` carácter por carácter: perderlas, o un error
+al copiarlas, significa perder todo.
 
-## Setup
+## Configuración
 
-1. **Password.** Set `RESTIC_PASSWORD` in `.env` (`openssl rand -base64 32`) and store it as said
-   above.
-2. **Local copy.** Mount the second disk or the NAS on the server (for example at
-   `/mnt/backups`, through `/etc/fstab` so it survives reboots) and set
-   `BACKUP_LOCAL_DIR=/mnt/backups/gestionador`. Empty, it falls back to `./backups` next to
-   `docker-compose.yml`, which is on the same disk as the data: fine for a first test, not as
-   the real local copy.
-3. **Cloud copy (Backblaze B2).**
-   1. Create a B2 account and a **private** bucket, for example `gestionador-backups`.
-   2. Create an application key restricted to that bucket, with read and write access.
-   3. In `.env`:
+1. **Contraseña.** Poné `RESTIC_PASSWORD` en `.env` (`openssl rand -base64 32`) y guardala como
+   se explica arriba.
+2. **Copia local.** Montá el segundo disco o el NAS en el servidor (por ejemplo en
+   `/mnt/backups`, desde `/etc/fstab` para que sobreviva a los reinicios) y poné
+   `BACKUP_LOCAL_DIR=/mnt/backups/gestionador`. Si queda vacía, usa `./backups` al lado de
+   `docker-compose.yml`, que está en el mismo disco que los datos: sirve para una primera prueba,
+   no como copia local de verdad.
+3. **Copia en la nube (Backblaze B2).**
+   1. Creá una cuenta de B2 y un bucket **privado**, por ejemplo `gestionador-backups`.
+   2. Creá una application key limitada a ese bucket, con permiso de lectura y escritura.
+   3. En `.env`:
 
       ```bash
       BACKUP_CLOUD_REPOSITORY=s3:https://s3.<region>.backblazeb2.com/gestionador-backups/gestionador
@@ -48,110 +48,113 @@ typo, means losing everything.
       AWS_SECRET_ACCESS_KEY=<applicationKey>
       ```
 
-      The region is part of the bucket's endpoint (for example `us-west-004`). Any other
-      S3-compatible storage works the same way with its own endpoint, and so does any other
-      [restic repository](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html).
-4. **First backup.** It creates both repositories:
+      La región es parte del endpoint del bucket (por ejemplo `us-west-004`). Cualquier otro
+      almacenamiento compatible con S3 funciona igual con su propio endpoint, y también cualquier
+      otro [repositorio de restic](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html).
+4. **Primer backup.** Crea los dos repositorios:
 
    ```bash
    cd /opt/gestionador-clientes
    docker compose run --rm backup
    ```
 
-   It ends with `backup finished`. A `WARNING: BACKUP_CLOUD_REPOSITORY is empty` means there is
-   no cloud copy yet.
-5. **Schedule.** Add to the crontab of the user that runs Docker (`crontab -e`):
+   Termina con `backup finished`. Un `WARNING: BACKUP_CLOUD_REPOSITORY is empty` quiere decir que
+   todavía no hay copia en la nube.
+5. **Programación.** Agregá al crontab del usuario que corre Docker (`crontab -e`):
 
    ```cron
-   # Every night at 03:30: backup to the local and cloud copies
+   # Todas las noches a las 03:30: backup a la copia local y a la de la nube
    30 3 * * * cd /opt/gestionador-clientes && docker compose run --rm -T backup >> backup.log 2>&1
-   # The 1st of every month at 05:00: restore test of the cloud copy
+   # El día 1 de cada mes a las 05:00: prueba de restauración de la copia de la nube
    0 5 1 * * cd /opt/gestionador-clientes && scripts/restore-test.sh cloud >> backup.log 2>&1
    ```
 
-6. **Monitoring (recommended).** A backup that silently stops running is the usual way of losing
-   data. Create a free check at [healthchecks.io](https://healthchecks.io/) (daily, with a grace
-   time of a few hours) and set its URL in `BACKUP_PING_URL`. Each backup reports to it, and
-   failures are reported to `<url>/fail`; healthchecks.io emails when a backup fails or does not
-   arrive.
+6. **Monitoreo (recomendado).** Un backup que deja de correr sin avisar es la forma más común de
+   perder datos. Creá un check gratis en [healthchecks.io](https://healthchecks.io/) (diario, con
+   unas horas de tolerancia) y poné su URL en `BACKUP_PING_URL`. Cada backup le avisa, y las
+   fallas se informan a `<url>/fail`; healthchecks.io manda un email cuando un backup falla o no
+   llega.
 
-7. **Run the first restore test** (next section) and write it down in the
-   [log](#restore-test-log). Also add a monthly agenda item to the server's device on its map:
-   "Revisar la prueba de restore".
+7. **Corré la primera prueba de restauración** (sección siguiente) y anotala en el
+   [registro](#registro-de-pruebas-de-restauración). Agregá también una tarea mensual en la agenda
+   del dispositivo del servidor en su mapa: "Revisar la prueba de restore".
 
-## Restore test
+## Prueba de restauración
 
 ```bash
-scripts/restore-test.sh          # the local copy
-scripts/restore-test.sh cloud    # the cloud copy
+scripts/restore-test.sh          # la copia local
+scripts/restore-test.sh cloud    # la copia de la nube
 ```
 
-It starts a throwaway Postgres that keeps nothing on disk, restores the latest snapshot into it,
-and then runs [`scripts/verify-restore.ts`](../scripts/verify-restore.ts) with the app's own code:
-it counts customers, devices, fields, screenshots and so on, and decrypts every 2FA key, every
-secret field and every screenshot with `ENCRYPTION_KEY`. Nothing decrypted is printed. The live
-database and files are never touched, and the throwaway data is deleted at the end.
+Arranca un Postgres descartable que no guarda nada en disco, restaura en él la última snapshot y
+después corre [`scripts/verify-restore.ts`](../scripts/verify-restore.ts) con el código de la
+propia app: cuenta clientes, dispositivos, campos, capturas, etc., y descifra cada clave 2FA, cada
+campo secreto y cada captura con `ENCRYPTION_KEY`. No se imprime nada descifrado. La base de datos
+y los archivos en uso nunca se tocan, y los datos descartables se borran al final.
 
-The result is appended to `restore-tests.log` next to `docker-compose.yml`. A failure lists what
-did not restore or decrypt:
+El resultado se agrega a `restore-tests.log` al lado de `docker-compose.yml`. Una falla lista lo
+que no se restauró o no se pudo descifrar:
 
-- `Nothing decrypts`: the `ENCRYPTION_KEY` in `.env` is not the one the backup was made with.
-- `attachment ... has no file`: a screenshot deleted in the seconds between the database dump and
-  the copy of the files. Run the backup and the test again; if it repeats, it is a real problem.
+- `Nothing decrypts`: la `ENCRYPTION_KEY` de `.env` no es la que se usó para hacer el backup.
+- `attachment ... has no file`: una captura borrada en los segundos entre el volcado de la base
+  de datos y la copia de los archivos. Corré el backup y la prueba de nuevo; si se repite, es un
+  problema real.
 
-The monthly test runs on the same server, so it does not prove that the keys in the safe are
-right. **Twice a year, do the full exercise**: on another machine, with only the printed sheet
-and this repository, follow [Disaster recovery](#disaster-recovery) with the cloud copy and sign
-in. Write it down in the log too.
+La prueba mensual corre en el mismo servidor, así que no demuestra que las claves guardadas en
+lugar seguro sean las correctas. **Dos veces por año, hacé el ejercicio completo**: en otra
+máquina, solo con la hoja impresa y este repositorio, seguí
+[Recuperación ante desastres](#recuperación-ante-desastres) con la copia de la nube y entrá a la
+app. Anotalo también en el registro.
 
-## Disaster recovery
+## Recuperación ante desastres
 
-The server died, or the data is damaged. On a new server (or the same one, reinstalled):
+El servidor murió o los datos están dañados. En un servidor nuevo (o el mismo, reinstalado):
 
-1. Follow [deployment.md](deployment.md) sections 1 and 2, writing `.env` with the **same**
-   `ENCRYPTION_KEY`, `RESTIC_PASSWORD` and backup settings as before (from the safe).
-2. Start only the database and restore into it. `recover` refuses to run on a database that
-   already has tables, so it can never overwrite live data:
+1. Seguí las secciones 1 y 2 de [deployment.md](deployment.md), escribiendo `.env` con la
+   **misma** `ENCRYPTION_KEY`, la misma `RESTIC_PASSWORD` y la misma configuración de backups que
+   antes (las del lugar seguro).
+2. Arrancá solo la base de datos y restaurá en ella. `recover` se niega a correr sobre una base de
+   datos que ya tiene tablas, así que nunca puede pisar datos en uso:
 
    ```bash
    docker compose up -d db
-   docker compose run --rm recover cloud     # or: local
+   docker compose run --rm recover cloud     # o: local
    ```
 
-3. Start everything and sign in as usual:
+3. Arrancá todo y entrá como siempre:
 
    ```bash
    docker compose up -d --build
    ```
 
-To go back to an older copy, list them and pass the snapshot ID:
+Para volver a una copia más vieja, listalas y pasá el ID de la snapshot:
 
 ```bash
 docker compose run --rm backup snapshots cloud
 docker compose run --rm recover cloud <snapshot-id>
 ```
 
-To restore over damaged data on a running server, stop the app, back the damaged state up just in
-case (`docker compose run --rm backup`), remove the volumes (`docker compose down -v`, which
-deletes the live database and screenshots) and follow step 2.
+Para restaurar sobre datos dañados en un servidor que está andando, pará la app, hacé un backup
+del estado dañado por las dudas (`docker compose run --rm backup`), borrá los volúmenes
+(`docker compose down -v`, que elimina la base de datos y las capturas en uso) y seguí el paso 2.
 
-## Reference
+## Referencia
 
-| Task | Command |
+| Tarea | Comando |
 |---|---|
-| Backup now | `docker compose run --rm backup` |
-| List the copies | `docker compose run --rm backup snapshots local` (or `cloud`) |
-| Restore test | `scripts/restore-test.sh local` (or `cloud`) |
-| Disaster recovery | `docker compose run --rm recover cloud [snapshot-id]` |
+| Backup ahora | `docker compose run --rm backup` |
+| Listar las copias | `docker compose run --rm backup snapshots local` (o `cloud`) |
+| Prueba de restauración | `scripts/restore-test.sh local` (o `cloud`) |
+| Recuperación ante desastres | `docker compose run --rm recover cloud [snapshot-id]` |
 
-The backup image is [`docker/backup`](../docker/backup/Dockerfile): Postgres 18 client tools and
-restic. Its commands are in [`backupctl.sh`](../docker/backup/backupctl.sh).
+La imagen de backup es [`docker/backup`](../docker/backup/Dockerfile): las herramientas de cliente
+de Postgres 18 y restic. Sus comandos están en [`backupctl.sh`](../docker/backup/backupctl.sh).
 
-## Restore test log
+## Registro de pruebas de restauración
 
-The script writes `restore-tests.log` on its own; record here the full exercises and anything
-worth remembering.
+El script escribe `restore-tests.log` solo; anotá acá los ejercicios completos y cualquier cosa que
+valga la pena recordar.
 
-| Date | Copy | Result | Who | Notes |
+| Fecha | Copia | Resultado | Quién | Notas |
 |---|---|---|---|---|
 | | | | | |

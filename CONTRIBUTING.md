@@ -70,8 +70,9 @@ reproduced and checked it.
 
 Everything in the repository is written in English: identifiers, comments, commit messages,
 pull requests, documentation, test names and command-line output. Comments explain *why* the
-code does something, not what it does. The only exception is the **interface text**, which is
-in Spanish because that is the language of the people who use the app.
+code does something, not what it does. The exceptions are the **interface text** and the
+**documents in `docs/`**, which are in Spanish because that is the language of the people who use
+and install the app.
 
 - **TypeScript** is strict and linted with ESLint (`npm run lint`). There is no Prettier: follow
   the style of the surrounding code and do not reformat files you did not change.

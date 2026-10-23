@@ -18,7 +18,7 @@
 - [ ] Every new page, Server Action and Route Handler that touches data calls `requireUser()`, and validates its input with zod.
 - [ ] Secrets and attachments are encrypted with `src/lib/crypto.ts` and a context; no real credentials, customer data or screenshots are committed.
 - [ ] Database changes come with a new migration; no merged migration was edited.
-- [ ] Everything is in English except the interface text, which is in Spanish.
+- [ ] Everything is in English except the interface text and `docs/`, which are in Spanish.
 - [ ] Documentation is updated (README, CONTRIBUTING, AGENTS.md, and a line under *Unreleased* in CHANGELOG.md), if needed.
 - [ ] I have read and understood every line of the change, and I ran the checks above myself.
 
