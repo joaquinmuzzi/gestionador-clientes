@@ -38,3 +38,8 @@ behaviour).
   drag), moving, connecting with an optional label, renaming and deleting devices (deleting a
   device asks first). Every change is saved automatically, with a saving indicator, and
   device and connection changes are audited.
+- The device sheet, opened with a double click on a device (or "Abrir ficha"): unlimited free
+  fields with a multi-line value, added, renamed, reordered and deleted, with suggested fields per
+  device type; secret fields encrypted with AES-256-GCM that reach the browser only when shown
+  or copied, hide again after 30 seconds and leave a `REVEAL` audit entry; and free text for
+  roles (who does what) and notes. Everything is saved automatically and audited.
