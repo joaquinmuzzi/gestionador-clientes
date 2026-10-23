@@ -34,3 +34,7 @@ behaviour).
   asks for the customer's name and removes everything it holds; every change is audited.
 - `npm run db:seed` loads two made-up sample customers for development.
 - A not-found page in Spanish.
+- The network map on each customer's page: a palette with an icon per device type (click or
+  drag), moving, connecting with an optional label, renaming and deleting devices (deleting a
+  device asks first). Every change is saved automatically, with a saving indicator, and
+  device and connection changes are audited.

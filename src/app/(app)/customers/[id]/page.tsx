@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth/session";
 import { getCustomer } from "@/lib/customers/queries";
+import { getCustomerMap } from "@/lib/map/queries";
+import { MapEditor } from "./map-editor";
 
 export const metadata: Metadata = { title: "Cliente · Gestionador de Clientes" };
 
@@ -11,7 +13,7 @@ export const metadata: Metadata = { title: "Cliente · Gestionador de Clientes" 
 // inside <Suspense> (Cache Components).
 export default function CustomerPage({ params }: PageProps<"/customers/[id]">) {
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">
         ← Clientes
       </Link>
@@ -28,6 +30,7 @@ async function CustomerDetails({ id }: { id: string }) {
   await requireUser();
   const customer = await getCustomer(id);
   if (!customer) notFound();
+  const map = await getCustomerMap(customer.id);
 
   return (
     <>
@@ -44,12 +47,12 @@ async function CustomerDetails({ id }: { id: string }) {
         <p className="mt-3 whitespace-pre-wrap text-neutral-700">{customer.notes}</p>
       )}
 
-      {/* The customer's main screen is its network map; the map editor goes here. */}
+      {/* The customer's main screen is its network map. */}
       <section
         aria-label="Mapa de red"
-        className="mt-6 flex h-96 items-center justify-center rounded-xl border-2 border-dashed border-neutral-300 bg-white text-neutral-500"
+        className="mt-6 h-[70vh] min-h-[28rem] overflow-hidden rounded-xl border border-neutral-200 bg-white"
       >
-        Acá va a estar el mapa de red del cliente.
+        <MapEditor customerId={customer.id} map={map} />
       </section>
     </>
   );
