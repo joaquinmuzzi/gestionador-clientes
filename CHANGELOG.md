@@ -27,3 +27,10 @@ behaviour).
 - Repository conventions: English documentation, a contributing guide, a security policy, issue
   and pull request templates, Conventional Commit titles and a mandatory `Assisted-by:` line
   checked by CI, Dependabot, and CI for lint, types, build, unit, end-to-end and Docker checks.
+- The full data model: customers, end users, devices with free and secret fields, connections,
+  attachments, incidents, vulnerabilities, agenda items and an audit log. The database refuses a
+  secret field stored in clear text and a connection or attachment that mixes two customers.
+- Customer list with a search by name, and pages to create, edit and delete a customer. Deleting
+  asks for the customer's name and removes everything it holds; every change is audited.
+- `npm run db:seed` loads two made-up sample customers for development.
+- A not-found page in Spanish.

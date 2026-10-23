@@ -28,6 +28,7 @@ docker compose up -d db                 # Postgres on localhost:5432
 npm ci                                  # also generates the Prisma client
 npm run db:migrate                      # applies the migrations
 npm run user:create -- you@example.com  # creates a user and enrolls 2FA
+npm run db:seed                         # optional: two made-up sample customers
 npm run dev                             # app on http://localhost:3000
 ```
 
@@ -50,12 +51,14 @@ If you change the `Dockerfile`, `docker-compose.yml` or the dependencies, also c
 The tests are organised like this:
 
 - `test/` holds the **unit tests** (Vitest), mirroring `src/`: encryption, TOTP (with the RFC
-  6238 test vectors), password hashing, the client IP for the rate limit. They need no database.
+  6238 test vectors), password hashing, the client IP for the rate limit, customer input. They
+  need no database.
 - `test/docs.test.ts` checks the Markdown files: no literal `\n` typed instead of a line break,
   and every relative link leads to a file or heading that exists.
 - `e2e/` holds the **end-to-end tests** (Playwright): redirects without a session, security
   headers, login and logout, the session cookie, the idle timeout, the generic login error, TOTP
-  replay and the rate limit. They create their own user (`e2e@example.test`) and use
+  replay, the rate limit, the customer pages and the rules the database enforces (secret fields,
+  connections between customers). They create their own user (`e2e@example.test`) and use
   documentation IPs (`192.0.2.x`), so they do not touch your development data.
 
 When you fix a bug, add a test that fails without the fix, and say in the description how you
@@ -86,8 +89,9 @@ src/
   lib/crypto.ts      AES-256-GCM encryption with a per-field context
   lib/db.ts          Prisma client
   lib/auth/          passwords, TOTP, sessions, rate limit, users
+  lib/customers/     customer input validation and queries
   proxy.ts           redirects visitors without a session cookie to /login
-prisma/              schema and migrations
+prisma/              schema, migrations and the development seed
 scripts/user.ts      user management from the terminal
 test/                unit tests (Vitest)
 e2e/                 end-to-end tests (Playwright)

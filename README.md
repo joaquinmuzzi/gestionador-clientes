@@ -5,8 +5,8 @@ passwords (encrypted), screenshots of complex configurations, incidents and an a
 an IT support technician who looks after many small companies and should not have to keep all of
 it in their head.
 
-> **Status:** early development. Login with two-factor authentication works; the customers, the
-> map and the device sheets are being built (see [CHANGELOG.md](CHANGELOG.md)).
+> **Status:** early development. Login with two-factor authentication and the customer list
+> work; the map and the device sheets are being built (see [CHANGELOG.md](CHANGELOG.md)).
 
 ## Why Gestionador de Clientes?
 
@@ -30,10 +30,12 @@ Available now:
 - Login with email, password (argon2id) and a code from an authenticator app (TOTP), with short,
   revocable sessions and rate limiting.
 - Users are created from the command line; there is no sign-up page.
+- Customers: a list with a search by name, and pages to create, edit and delete them (deleting
+  asks for the customer's name). Every change goes to an audit log.
 - Application-level encryption (AES-256-GCM) for every secret.
 - Runs on your own server with Docker Compose.
 
-Planned for the first version: customers, the network map, device sheets with free and secret
+Planned for the first version: the network map, device sheets with free and secret
 fields, screenshots, incidents, vulnerabilities, an agenda, end-user profiles and a global
 search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
 
@@ -54,6 +56,8 @@ npm run db:migrate
 npm run user:create -- you@example.com
 npm run dev
 ```
+
+To try the app with made-up sample customers, run `npm run db:seed` (development only).
 
 `user:create` asks for a password, shows a QR code for your authenticator app (Google
 Authenticator, Aegis, 1Password…) and asks for a code to confirm it. Then sign in at
