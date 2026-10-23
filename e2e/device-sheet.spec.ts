@@ -87,9 +87,14 @@ test("double click opens the sheet, where free and secret fields are added", asy
     "DHCP y DNS de la oficina.",
   );
 
-  // On a fresh load the secret doesn't reach the browser until "Ver".
+  // On a fresh load the secret doesn't reach the browser until "Ver". Only
+  // finished requests are read: a streamed response still open never resolves.
   const bodies: Promise<string>[] = [];
-  page.on("response", (response) => bodies.push(response.text().catch(() => "")));
+  page.on("requestfinished", (request) =>
+    bodies.push(
+      request.response().then((response) => response?.text() ?? "").catch(() => ""),
+    ),
+  );
   await page.reload();
   sheet = await openSheet(page, customer.id, "Router oficina");
   await expect(sheet.getByLabel("Valor de Reservas DHCP")).toHaveValue(/192\.0\.2\.11 NAS/);
