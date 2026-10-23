@@ -1,0 +1,85 @@
+# Gestionador de Clientes
+
+Document every customer's IT infrastructure **as a network map**: devices, IP addresses,
+passwords (encrypted), screenshots of complex configurations, incidents and an agenda. Built for
+an IT support technician who looks after many small companies and should not have to keep all of
+it in their head.
+
+> **Status:** early development. Login with two-factor authentication works; the customers, the
+> map and the device sheets are being built (see [CHANGELOG.md](CHANGELOG.md)).
+
+## Why Gestionador de Clientes?
+
+A technician who supports many companies has to remember hundreds of details: which IP the
+firewall has, the long password of a NAS, how an IPsec tunnel was set up, who at the customer
+may touch what. Generic documentation tools force everything into fixed forms and long lists.
+
+Gestionador de Clientes works the way a technician already draws a network:
+
+- **Map first.** Each customer opens on its network diagram; double-click a device to see its
+  sheet.
+- **No rigid standard.** Any device takes as many free fields as it needs.
+- **Secure.** Passwords and screenshots are encrypted in the application, and login always
+  needs a second factor.
+- **Simple.** Few screens and few clicks.
+
+## Features
+
+Available now:
+
+- Login with email, password (argon2id) and a code from an authenticator app (TOTP), with short,
+  revocable sessions and rate limiting.
+- Users are created from the command line; there is no sign-up page.
+- Application-level encryption (AES-256-GCM) for every secret.
+- Runs on your own server with Docker Compose.
+
+Planned for the first version: customers, the network map, device sheets with free and secret
+fields, screenshots, incidents, vulnerabilities, an agenda, end-user profiles and a global
+search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
+
+The interface is in Spanish.
+
+## Quick start
+
+You need Node.js 22.12+ and Docker with Docker Compose.
+
+```bash
+cp .env.example .env
+# Edit .env: set a Postgres password (letters and digits only) in POSTGRES_PASSWORD and in
+# DATABASE_URL, and generate ENCRYPTION_KEY with: openssl rand -base64 32
+
+docker compose up -d db
+npm ci
+npm run db:migrate
+npm run user:create -- you@example.com
+npm run dev
+```
+
+`user:create` asks for a password, shows a QR code for your authenticator app (Google
+Authenticator, Aegis, 1Password…) and asks for a code to confirm it. Then sign in at
+<http://localhost:3000> with your email, password and the code from the app.
+
+## Usage
+
+Lost your phone? `npm run user:reset-2fa -- you@example.com`. Forgot your password?
+`npm run user:set-password -- you@example.com`. Both close every open session.
+
+### Docker
+
+```bash
+docker compose up -d --build
+docker compose run --rm migrate npm run user:create -- you@example.com
+```
+
+The app is served on <http://localhost:3000> and Postgres on `localhost:5432`, both reachable
+only from the same machine. To use it from another machine, put HTTPS in front of it.
+
+**Keep `ENCRYPTION_KEY` somewhere safe and separate from the backups.** Without it, the
+encrypted secrets cannot be recovered.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the checks, the commit and
+pull request conventions and the rules for AI-assisted contributions. Coding agents also follow
+[AGENTS.md](AGENTS.md). Security problems go through [SECURITY.md](SECURITY.md), never a public
+issue.
