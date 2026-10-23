@@ -52,3 +52,8 @@ next-env.d.ts
 
 # Encrypted attachment files written in development (ATTACHMENTS_DIR)
 /data/
+
+# Local backup repository and restore test log on a server (docs/backups.md)
+/backups/
+/restore-tests.log
+/backup.log

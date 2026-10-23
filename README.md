@@ -45,7 +45,8 @@ Available now:
 - A global search (Ctrl+K) by name, IP or any text that is not a secret; a result opens the
   device on its map.
 - Application-level encryption (AES-256-GCM) for every secret and every image.
-- Runs on your own server with Docker Compose.
+- Runs on your own server with Docker Compose, reached through Tailscale or HTTPS, with nightly
+  encrypted backups to a local disk and to the cloud and a monthly restore test.
 
 The interface is in Spanish.
 
@@ -84,10 +85,12 @@ docker compose run --rm migrate npm run user:create -- you@example.com
 ```
 
 The app is served on <http://localhost:3000> and Postgres on `localhost:5432`, both reachable
-only from the same machine. To use it from another machine, put HTTPS in front of it.
+only from the same machine. To install it on a server and reach it from other machines, follow
+[docs/deployment.md](docs/deployment.md).
 
 Screenshots are stored encrypted in the `attachments` volume, not in the database: a backup
-needs both the database and that volume.
+needs both the database and that volume. [docs/backups.md](docs/backups.md) sets up the main,
+local and cloud copies and the restore test.
 
 **Keep `ENCRYPTION_KEY` somewhere safe and separate from the backups.** Without it, the
 encrypted secrets cannot be recovered.
