@@ -143,19 +143,19 @@ export function AttachmentGallery({
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
       className={
-        "flex flex-col gap-3 rounded-lg p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 " +
+        "flex flex-col gap-3 rounded-lg p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
         (dragging ? "bg-neutral-100 outline-2 outline-neutral-400 outline-dashed" : "")
       }
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 id={headingId} className="text-sm font-semibold text-neutral-800">
+        <h3 id={headingId} className="text-base font-semibold text-neutral-900">
           {heading}
         </h3>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={!hydrated}
-          className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white hover:bg-neutral-700 disabled:opacity-40"
+          className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-40"
         >
           Agregar imagen
         </button>
@@ -267,7 +267,7 @@ function AttachmentCard({
         onKeyDown={(event) => {
           if (event.key === "Enter") event.currentTarget.blur();
         }}
-        className="w-full rounded border border-transparent px-1 py-0.5 text-xs text-neutral-800 hover:border-neutral-300 focus:border-neutral-900 focus:outline-none"
+        className="w-full rounded border border-transparent px-1 py-0.5 text-xs text-neutral-800 hover:border-neutral-300 focus:border-accent focus:outline-none"
       />
       <div className="flex items-center justify-between px-1 text-xs text-neutral-500">
         <span>{formatSize(attachment.size)}</span>

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultDeviceName,
+  deviceAddress,
   deviceMovesSchema,
   firstIssue,
+  isTunnel,
   mapDeletionSchema,
   newConnectionSchema,
   newDeviceSchema,
@@ -72,5 +74,42 @@ describe("defaultDeviceName", () => {
       "Servidor 3",
     );
     expect(defaultDeviceName("ACCESS_POINT", ["Router"])).toBe("Access point");
+  });
+});
+
+describe("deviceAddress", () => {
+  it("takes the first line of the first field named like an IP", () => {
+    expect(
+      deviceAddress([
+        { name: "Modelo", value: "MikroTik" },
+        { name: "IP  LAN", value: "192.0.2.1 / 24\nreservada" },
+        { name: "IP WAN", value: "203.0.113.10" },
+      ]),
+    ).toBe("192.0.2.1 / 24");
+    expect(deviceAddress([{ name: "Dirección IP", value: " 192.0.2.10 " }])).toBe("192.0.2.10");
+    expect(deviceAddress([{ name: "ip", value: "192.0.2.20" }])).toBe("192.0.2.20");
+  });
+
+  it("ignores names that only start with the letters", () => {
+    expect(deviceAddress([{ name: "IPsec", value: "túnel a 198.51.100.7" }])).toBe("");
+    expect(deviceAddress([])).toBe("");
+  });
+
+  it("shortens a long value", () => {
+    const address = deviceAddress([{ name: "IP", value: "x".repeat(100) }]);
+    expect(address).toHaveLength(40);
+    expect(address.endsWith("…")).toBe(true);
+  });
+});
+
+describe("isTunnel", () => {
+  it("recognises a VPN label", () => {
+    for (const label of ["VPN IPsec", "vpn sucursal", "Túnel a la casa central", "WireGuard"]) {
+      expect(isTunnel(label)).toBe(true);
+    }
+  });
+
+  it("leaves cables alone", () => {
+    for (const label of ["", "WAN1", "VLAN 20", "trunk"]) expect(isTunnel(label)).toBe(false);
   });
 });

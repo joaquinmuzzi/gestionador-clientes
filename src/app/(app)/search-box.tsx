@@ -5,9 +5,10 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { SEARCH_MAX_LENGTH } from "@/lib/search/input";
 
+// Dark, to sit in the navy header.
 const inputClass =
-  "w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "w-full rounded-lg border border-transparent bg-navy-soft px-3 py-1.5 text-sm text-white " +
+  "placeholder:text-navy-muted focus:border-accent-line focus:outline-none";
 
 const placeholder = "Buscar nombre, IP, texto… (Ctrl+K)";
 

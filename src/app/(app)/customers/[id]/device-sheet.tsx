@@ -12,7 +12,7 @@ import {
 } from "@/lib/devices/input";
 import type { DeviceSheet as SheetData, SheetField } from "@/lib/devices/queries";
 import type { DeviceAlerts } from "@/lib/devices/records";
-import { DEVICE_TYPE_LABELS, type DeviceType } from "@/lib/map/input";
+import { DEVICE_TYPE_LABELS, deviceAddress, type DeviceType } from "@/lib/map/input";
 import {
   createField,
   deleteField,
@@ -36,7 +36,7 @@ const COPIED_MS = 2_000;
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 const smallButtonClass =
   "rounded-md border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700 hover:bg-neutral-100 " +
   "disabled:opacity-40";
@@ -58,13 +58,15 @@ export function DeviceSheet({
   status,
   onClose,
   onAlertsChange,
+  onAddressChange,
 }: {
   customerId: string;
-  device: { id: string; name: string; type: DeviceType };
+  device: { id: string; name: string; type: DeviceType; address?: string };
   save: Save;
   status: ReactNode;
   onClose: () => void;
   onAlertsChange?: (alerts: DeviceAlerts) => void;
+  onAddressChange?: (address: string) => void;
 }) {
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -101,15 +103,25 @@ export function DeviceSheet({
     <section
       role="dialog"
       aria-labelledby={titleId}
-      className="absolute inset-y-0 right-0 z-10 flex w-full max-w-md flex-col border-l border-neutral-200 bg-white shadow-xl"
+      className="absolute inset-y-0 right-0 z-10 flex w-full max-w-lg flex-col border-l border-neutral-200 bg-neutral-50 shadow-xl"
     >
-      <header className="flex items-start gap-3 border-b border-neutral-200 p-4">
-        <DeviceIcon type={device.type} className="mt-0.5 size-8 shrink-0 text-neutral-800" />
+      <header className="flex items-start gap-3 border-b border-neutral-200 bg-white p-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-accent-line/60 bg-accent-soft">
+          <DeviceIcon type={device.type} className="size-7 text-accent-ink" />
+        </span>
         <div className="min-w-0 flex-1">
-          <h2 id={titleId} className="text-lg leading-tight font-semibold break-words">
+          <h2 id={titleId} className="text-xl leading-tight font-semibold break-words">
             {device.name}
           </h2>
-          <p className="text-sm text-neutral-600">{DEVICE_TYPE_LABELS[device.type]}</p>
+          <p className="text-sm text-neutral-600">
+            {DEVICE_TYPE_LABELS[device.type]}
+            {device.address && (
+              <>
+                {" · "}
+                <span className="font-mono text-neutral-900">{device.address}</span>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {status}
@@ -138,6 +150,7 @@ export function DeviceSheet({
             type={device.type}
             save={save}
             onAlertsChange={onAlertsChange}
+            onAddressChange={onAddressChange}
           />
         )}
       </div>
@@ -151,14 +164,28 @@ function SheetBody({
   type,
   save,
   onAlertsChange,
+  onAddressChange,
 }: {
   customerId: string;
   sheet: SheetData;
   type: DeviceType;
   save: Save;
   onAlertsChange?: (alerts: DeviceAlerts) => void;
+  onAddressChange?: (address: string) => void;
 }) {
   const [fields, setFields] = useState<Field[]>(sheet.fields);
+
+  // The map shows the address under the device; keep it in step with the
+  // fields as they are saved (drafts and secrets don't count).
+  // Only a change is reported: the map passes a new callback on every render.
+  const address = deviceAddress(fields.filter((field) => !field.draft && !field.isSecret));
+  const reportAddress = useRef(onAddressChange);
+  useEffect(() => {
+    reportAddress.current = onAddressChange;
+  });
+  useEffect(() => {
+    reportAddress.current?.(address);
+  }, [address]);
   // Which field takes the focus when it appears, and where.
   const [focus, setFocus] = useState<{ id: string; on: "name" | "value" } | null>(null);
 
@@ -198,11 +225,14 @@ function SheetBody({
   const suggestions = remainingSuggestions(type, fields.map((field) => field.name));
 
   return (
-    <div className="flex flex-col gap-6">
-      <section aria-labelledby="sheet-fields" className="flex flex-col gap-3">
-        <h3 id="sheet-fields" className="text-sm font-semibold text-neutral-800">
-          Campos
-        </h3>
+    <div className="flex flex-col gap-4">
+      <section aria-labelledby="sheet-fields" className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+        <div>
+          <h3 id="sheet-fields" className="text-base font-semibold text-neutral-900">
+            Campos
+          </h3>
+          <p className="text-sm text-neutral-600">Libres, sin formato fijo. Agregá los que necesites.</p>
+        </div>
         {fields.length === 0 && (
           <p className="text-sm text-neutral-500">
             Todavía no tiene campos. Agregá los que necesites: no hay ninguno obligatorio.
@@ -228,7 +258,7 @@ function SheetBody({
           <button
             type="button"
             onClick={() => addField()}
-            className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white hover:bg-neutral-700"
+            className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
           >
             Agregar campo
           </button>
@@ -246,7 +276,13 @@ function SheetBody({
         </div>
       </section>
 
-      <AttachmentGallery customerId={customerId} deviceId={sheet.id} initial={sheet.attachments} />
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <AttachmentGallery
+          customerId={customerId}
+          deviceId={sheet.id}
+          initial={sheet.attachments}
+        />
+      </div>
 
       <DeviceTexts customerId={customerId} sheet={sheet} save={save} />
 
@@ -522,7 +558,7 @@ function SecretValue({
             type="button"
             onClick={store}
             disabled={field.draft}
-            className="rounded-md bg-neutral-900 px-2.5 py-0.5 text-xs text-white hover:bg-neutral-700 disabled:opacity-40"
+            className="rounded-md bg-accent px-2.5 py-0.5 text-xs text-white hover:bg-accent-strong disabled:opacity-40"
           >
             Guardar
           </button>
@@ -544,13 +580,17 @@ function SecretValue({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {shown === null ? (
-        <span aria-label={`Valor de ${label} oculto`} className="flex-1 font-mono text-sm text-neutral-500">
-          ••••••••
+        <span
+          aria-label={`Valor de ${label} oculto`}
+          className="flex flex-1 items-center gap-1.5 font-mono text-sm tracking-widest text-neutral-500"
+        >
+          <LockIcon />
+          ••••••••••••
         </span>
       ) : (
         <pre
           aria-label={`Valor de ${label}`}
-          className="w-full flex-1 overflow-x-auto rounded-md bg-amber-50 px-2 py-1.5 font-mono text-sm whitespace-pre-wrap break-all text-neutral-900"
+          className="w-full flex-1 overflow-x-auto rounded-md bg-caution-soft px-2 py-1.5 font-mono text-sm whitespace-pre-wrap break-all text-neutral-900"
         >
           {shown}
         </pre>
@@ -595,8 +635,8 @@ function DeviceTexts({
   };
 
   return (
-    <section className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-800">
+    <section className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+      <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-900">
         Funciones (quién hace qué)
         <textarea
           value={roles}
@@ -608,7 +648,7 @@ function DeviceTexts({
           className={inputClass + " font-normal"}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-800">
+      <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-900">
         Notas
         <textarea
           value={notes}
@@ -620,5 +660,23 @@ function DeviceTexts({
         />
       </label>
     </section>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-4 shrink-0 text-neutral-700"
+    >
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
   );
 }
