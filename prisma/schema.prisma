@@ -1,0 +1,62 @@
+// Prisma schema. Run `npm run db:migrate` after changing it.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// The technician who logs in. The MVP has a single user, created from the CLI
+// (`npm run user:create`).
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+
+  // TOTP secret encrypted with AES-256-GCM (see src/lib/crypto.ts).
+  totpSecret       String
+  // Last TOTP time step accepted, so a code can't be reused (replay).
+  totpLastUsedStep Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+// Server-side session. The cookie holds a random token; only its SHA-256 hash
+// is stored here, so a database leak doesn't hand out live sessions.
+model Session {
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  @@index([userId])
+}
+
+enum LoginOutcome {
+  SUCCESS
+  INVALID
+}
+
+// Login attempts that reached the credential check. Used for rate limiting
+// and as the login audit trail. Rejected-by-rate-limit requests aren't stored,
+// so a flood can't fill the table.
+model LoginAttempt {
+  id        String       @id @default(uuid())
+  email     String
+  ipAddress String
+  outcome   LoginOutcome
+  createdAt DateTime     @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}
