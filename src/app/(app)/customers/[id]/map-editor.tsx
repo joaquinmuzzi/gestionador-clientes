@@ -109,7 +109,14 @@ function toEdge(connection: CustomerMap["connections"][number]): ConnectionEdge 
   };
 }
 
-export function MapEditor(props: { customerId: string; map: CustomerMap }) {
+type EditorProps = {
+  customerId: string;
+  map: CustomerMap;
+  // A device of this map to centre on and open, when the search leads here.
+  focusDeviceId?: string | null;
+};
+
+export function MapEditor(props: EditorProps) {
   return (
     <ReactFlowProvider>
       <Editor {...props} />
@@ -117,8 +124,10 @@ export function MapEditor(props: { customerId: string; map: CustomerMap }) {
   );
 }
 
-function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<DeviceNode>(map.devices.map(toNode));
+function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<DeviceNode>(
+    map.devices.map((device) => ({ ...toNode(device), selected: device.id === focusDeviceId })),
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState<ConnectionEdge>(
     map.connections.map(toEdge),
   );
@@ -126,7 +135,7 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
   const { save, saving, error } = useAutosave();
   const canvas = useRef<HTMLDivElement>(null);
   // The device whose sheet is open, if any.
-  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [sheetId, setSheetId] = useState<string | null>(focusDeviceId);
   const closeSheet = useCallback(() => setSheetId(null), []);
 
   const addDevice = (type: DeviceType, at: { x: number; y: number }) => {
@@ -320,7 +329,10 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
           // Double click is for opening the device sheet, not for zooming.
           zoomOnDoubleClick={false}
           fitView
-          fitViewOptions={{ maxZoom: 1 }}
+          fitViewOptions={{
+            maxZoom: 1,
+            nodes: focusDeviceId ? [{ id: focusDeviceId }] : undefined,
+          }}
           minZoom={0.2}
           ariaLabelConfig={ariaLabelConfig}
           proOptions={{ hideAttribution: true }}

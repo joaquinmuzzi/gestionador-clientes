@@ -56,3 +56,8 @@ behaviour).
 - End users on the customer page: name, role, contact, technical level, what they may and may
   not touch, how to deal with them, and whether they are a main contact. Saved automatically.
 - Every change to incidents, vulnerabilities, tasks and end users is audited.
+- A global search in the header (Ctrl+K or ⌘K): by customer, device or device type name, IP or
+  any text that is not a secret (free fields, roles, notes, connection labels, incidents,
+  vulnerabilities, tasks, end users, image titles). Results are grouped by customer and device
+  with the match marked, and a device result opens the map centred on it with its sheet open.
+  Secret fields are never searched or shown.

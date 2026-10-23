@@ -42,10 +42,10 @@ Available now:
   task is marked on the map.
 - The end users of each customer: role, contact, technical level, what they may touch and how
   to deal with them.
+- A global search (Ctrl+K) by name, IP or any text that is not a secret; a result opens the
+  device on its map.
 - Application-level encryption (AES-256-GCM) for every secret and every image.
 - Runs on your own server with Docker Compose.
-
-Planned for the first version: a global search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
 
 The interface is in Spanish.
 

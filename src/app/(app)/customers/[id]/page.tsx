@@ -14,23 +14,24 @@ import { MapEditor } from "./map-editor";
 export const metadata: Metadata = { title: "Cliente · Gestionador de Clientes" };
 
 // The id is only known at request time, so everything that reads it sits
-// inside <Suspense> (Cache Components).
-export default function CustomerPage({ params }: PageProps<"/customers/[id]">) {
+// inside <Suspense> (Cache Components). `?device=<id>`, from the search,
+// centres the map on that device and opens its sheet.
+export default function CustomerPage({ params, searchParams }: PageProps<"/customers/[id]">) {
   return (
     <div className="mx-auto max-w-7xl">
       <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">
         ← Clientes
       </Link>
       <Suspense fallback={<p className="mt-4 text-neutral-500">Cargando…</p>}>
-        {params.then(({ id }) => (
-          <CustomerDetails id={id} />
+        {Promise.all([params, searchParams]).then(([{ id }, { device }]) => (
+          <CustomerDetails id={id} deviceId={typeof device === "string" ? device : null} />
         ))}
       </Suspense>
     </div>
   );
 }
 
-async function CustomerDetails({ id }: { id: string }) {
+async function CustomerDetails({ id, deviceId }: { id: string; deviceId: string | null }) {
   await requireUser();
   const customer = await getCustomer(id);
   if (!customer) notFound();
@@ -39,6 +40,8 @@ async function CustomerDetails({ id }: { id: string }) {
     getCustomerAttachments(customer.id),
     getEndUsers(customer.id),
   ]);
+  // Only a device of this map; anything else in the URL is ignored.
+  const focusDeviceId = map.devices.some((device) => device.id === deviceId) ? deviceId : null;
 
   return (
     <>
@@ -60,7 +63,14 @@ async function CustomerDetails({ id }: { id: string }) {
         aria-label="Mapa de red"
         className="mt-6 h-[70vh] min-h-[28rem] overflow-hidden rounded-xl border border-neutral-200 bg-white"
       >
-        <MapEditor customerId={customer.id} map={map} />
+        {/* Keyed, so a search that leads to another device of the same customer
+            centres the map again. */}
+        <MapEditor
+          key={focusDeviceId ?? ""}
+          customerId={customer.id}
+          map={map}
+          focusDeviceId={focusDeviceId}
+        />
       </section>
 
       <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
