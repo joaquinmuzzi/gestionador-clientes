@@ -74,6 +74,10 @@ Authenticator, Aegis, 1Password…) and asks for a code to confirm it. Then sign
 
 ## Usage
 
+The interface is explained, task by task and in Spanish, in the [user guide](docs/user-guide.md)
+(guía de uso). [docs/user-checklist.md](docs/user-checklist.md) is the one-page sheet with what
+the user has to look after: the two keys kept offline and the monthly restore test.
+
 Lost your phone? `npm run user:reset-2fa -- you@example.com`. Forgot your password?
 `npm run user:set-password -- you@example.com`. Both close every open session.
 
