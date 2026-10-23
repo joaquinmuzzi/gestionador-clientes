@@ -1,6 +1,6 @@
 import { generateHOTP } from "@oslojs/otp";
 import { describe, expect, it } from "vitest";
-import { currentTotpStep, totpKeyUri, verifyTotp } from "./totp";
+import { currentTotpStep, totpKeyUri, verifyTotp } from "@/lib/auth/totp";
 
 // RFC 6238 appendix B test key (SHA-1).
 const key = new TextEncoder().encode("12345678901234567890");
@@ -38,7 +38,7 @@ describe("verifyTotp", () => {
 
 describe("totpKeyUri", () => {
   it("builds an otpauth URI for authenticator apps", () => {
-    const uri = totpKeyUri("tecnico@ejemplo.local", key);
+    const uri = totpKeyUri("technician@example.test", key);
     expect(uri).toMatch(/^otpauth:\/\/totp\//);
     expect(uri).toContain("secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ");
     expect(uri).toContain("issuer=Gestionador+de+Clientes");

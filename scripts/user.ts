@@ -34,7 +34,7 @@ async function ask(question: string): Promise<string> {
 function askHidden(question: string): Promise<string> {
   const stdin = process.stdin;
   if (!stdin.isTTY) {
-    return Promise.reject(new Error("Corré este comando en una terminal interactiva."));
+    return Promise.reject(new Error("Run this command in an interactive terminal."));
   }
   process.stdout.write(question);
   stdin.setRawMode(true);
@@ -52,7 +52,7 @@ function askHidden(question: string): Promise<string> {
     const onData = (chunk: string) => {
       for (const char of chunk) {
         if (char === "\r" || char === "\n") return finish(() => resolve(value));
-        if (char === "\u0003") return finish(() => reject(new Error("Cancelado.")));
+        if (char === "\u0003") return finish(() => reject(new Error("Cancelled.")));
         if (char === "\u007f" || char === "\b") value = value.slice(0, -1);
         else value += char;
       }
@@ -62,12 +62,12 @@ function askHidden(question: string): Promise<string> {
 }
 
 async function askNewPassword(): Promise<string> {
-  const password = await askHidden(`Contraseña (mínimo ${MIN_PASSWORD_LENGTH} caracteres): `);
+  const password = await askHidden(`Password (at least ${MIN_PASSWORD_LENGTH} characters): `);
   if (password.length < MIN_PASSWORD_LENGTH) {
-    throw new Error(`La contraseña tiene que tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+    throw new Error(`The password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
   }
-  if ((await askHidden("Repetila: ")) !== password) {
-    throw new Error("Las contraseñas no coinciden.");
+  if ((await askHidden("Repeat it: ")) !== password) {
+    throw new Error("The passwords do not match.");
   }
   return password;
 }
@@ -77,58 +77,58 @@ async function askNewPassword(): Promise<string> {
 async function enrollTotp(email: string): Promise<{ key: Uint8Array; step: number }> {
   const key = generateTotpKey();
   const uri = totpKeyUri(email, key);
-  console.log("\nEscaneá este QR con tu app de autenticación (Google Authenticator, Aegis, 1Password…):\n");
+  console.log("\nScan this QR code with your authenticator app (Google Authenticator, Aegis, 1Password…):\n");
   console.log(await QRCode.toString(uri, { type: "terminal", small: true }));
-  console.log(`Si no podés escanearlo, cargá esta clave a mano: ${encodeBase32NoPadding(key)}\n`);
+  console.log(`If you cannot scan it, enter this key by hand: ${encodeBase32NoPadding(key)}\n`);
 
-  const code = (await ask("Código de 6 dígitos que muestra la app: ")).replace(/\s/g, "");
+  const code = (await ask("6-digit code shown by the app: ")).replace(/\s/g, "");
   const step = verifyTotp(key, code, null);
   if (step === null) {
-    throw new Error("El código no coincide. No se guardó nada; probá de nuevo.");
+    throw new Error("The code does not match. Nothing was saved; try again.");
   }
   return { key, step };
 }
 
 async function findUser(email: string) {
   const user = await db.user.findUnique({ where: { email } });
-  if (!user) throw new Error(`No existe un usuario con el email ${email}.`);
+  if (!user) throw new Error(`There is no user with the email ${email}.`);
   return user;
 }
 
 async function main() {
   const [command, rawEmail] = process.argv.slice(2);
   if (!command || !rawEmail) {
-    throw new Error("Uso: npm run user:create|user:reset-2fa|user:set-password -- <email>");
+    throw new Error("Usage: npm run user:create|user:reset-2fa|user:set-password -- <email>");
   }
   const email = normalizeEmail(rawEmail);
-  if (!z.email().safeParse(email).success) throw new Error(`Email inválido: ${email}`);
+  if (!z.email().safeParse(email).success) throw new Error(`Invalid email: ${email}`);
 
   switch (command) {
     case "create": {
       if (await db.user.findUnique({ where: { email } })) {
-        throw new Error(`Ya existe un usuario con el email ${email}.`);
+        throw new Error(`A user with the email ${email} already exists.`);
       }
       const password = await askNewPassword();
       const { key, step } = await enrollTotp(email);
       await createUser({ email, password, totpKey: key, totpLastUsedStep: step });
-      console.log(`Listo: usuario ${email} creado con 2FA.`);
+      console.log(`Done: user ${email} created with 2FA.`);
       break;
     }
     case "reset-2fa": {
       const user = await findUser(email);
       const { key, step } = await enrollTotp(email);
       await replaceTotpKey(user.id, key, step);
-      console.log("Listo: 2FA nuevo guardado. Se cerraron todas las sesiones abiertas.");
+      console.log("Done: new 2FA key saved. Every open session was closed.");
       break;
     }
     case "set-password": {
       const user = await findUser(email);
       await replacePassword(user.id, await askNewPassword());
-      console.log("Listo: contraseña cambiada. Se cerraron todas las sesiones abiertas.");
+      console.log("Done: password changed. Every open session was closed.");
       break;
     }
     default:
-      throw new Error(`Comando desconocido: ${command}`);
+      throw new Error(`Unknown command: ${command}`);
   }
 }
 

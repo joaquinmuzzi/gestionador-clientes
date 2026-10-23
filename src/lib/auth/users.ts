@@ -15,7 +15,7 @@ function totpContext(userId: string): string {
 
 function assertPasswordStrength(password: string): void {
   if (password.length < MIN_PASSWORD_LENGTH) {
-    throw new Error(`La contraseña tiene que tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+    throw new Error(`The password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
   }
 }
 

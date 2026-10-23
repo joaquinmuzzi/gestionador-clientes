@@ -1,22 +1,23 @@
 import { db } from "@/lib/db";
 import { TEST_USER, expect, login, test, totpCode } from "./fixtures";
 
+// Interface text is in Spanish
 const INVALID = "Email, contraseña o código incorrectos.";
 
-test("sin sesión, cualquier página lleva al login", async ({ page }) => {
+test("without a session every page leads to the login", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Gestionador de Clientes" })).toBeVisible();
 });
 
-test("las respuestas llevan cabeceras de seguridad", async ({ request }) => {
+test("responses carry security headers", async ({ request }) => {
   const response = await request.get("/login");
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response.headers()["x-powered-by"]).toBeUndefined();
 });
 
-test("entra con contraseña y código, y sale", async ({ page, context }) => {
+test("signs in with password and code, and signs out", async ({ page, context }) => {
   await login(page);
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: "Clientes", exact: true })).toBeVisible();
@@ -34,7 +35,7 @@ test("entra con contraseña y código, y sale", async ({ page, context }) => {
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("una hora sin actividad cierra la sesión", async ({ page }) => {
+test("an hour without activity ends the session", async ({ page }) => {
   await login(page);
   await expect(page.getByRole("heading", { name: "Clientes", exact: true })).toBeVisible();
 
@@ -47,18 +48,18 @@ test("una hora sin actividad cierra la sesión", async ({ page }) => {
   expect(await db.session.count({ where: { user: { email: TEST_USER.email } } })).toBe(0);
 });
 
-test("un código o una contraseña incorrectos dan el mismo error", async ({ page }) => {
+test("a wrong code, password or email gives the same error", async ({ page }) => {
   await login(page, { code: totpCode() === "000000" ? "111111" : "000000" });
   await expect(page.locator("form").getByRole("alert")).toHaveText(INVALID);
 
-  await login(page, { password: "otra-clave-incorrecta" });
+  await login(page, { password: "another-wrong-password" });
   await expect(page.locator("form").getByRole("alert")).toHaveText(INVALID);
 
-  await login(page, { email: "nadie@ejemplo.local" });
+  await login(page, { email: "nobody@example.test" });
   await expect(page.locator("form").getByRole("alert")).toHaveText(INVALID);
 });
 
-test("un código ya usado no sirve de nuevo", async ({ page }) => {
+test("a code that was already used does not work again", async ({ page }) => {
   const code = totpCode();
   await login(page, { code });
   await expect(page.getByRole("heading", { name: "Clientes", exact: true })).toBeVisible();
@@ -69,9 +70,9 @@ test("un código ya usado no sirve de nuevo", async ({ page }) => {
   await expect(page.locator("form").getByRole("alert")).toHaveText(INVALID);
 });
 
-test("después de 5 intentos fallidos bloquea el login", async ({ page }) => {
+test("5 failed attempts block the login", async ({ page }) => {
   for (let attempt = 0; attempt < 5; attempt++) {
-    await login(page, { password: `clave-incorrecta-${attempt}` });
+    await login(page, { password: `wrong-password-${attempt}` });
     await expect(page.locator("form").getByRole("alert")).toHaveText(INVALID);
   }
   await login(page);
