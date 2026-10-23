@@ -24,7 +24,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions Session[]
+  sessions  Session[]
+  auditLogs AuditLog[]
 }
 
 // Server-side session. The cookie holds a random token; only its SHA-256 hash
@@ -59,4 +60,257 @@ model LoginAttempt {
 
   @@index([email, createdAt])
   @@index([ipAddress, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Customers and their infrastructure. Everything hangs from a Customer and is
+// deleted with it. Attachment files on disk are not rows: whoever deletes a
+// customer or a device also has to remove its encrypted files.
+// ---------------------------------------------------------------------------
+
+// A company the technician serves. Its main screen is the network map.
+model Customer {
+  id    String @id @default(uuid())
+  // Unique ignoring case, checked in the app (src/lib/customers/queries.ts);
+  // the index catches exact duplicates.
+  name  String @unique
+  notes String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  endUsers    EndUser[]
+  devices     Device[]
+  connections Connection[]
+  attachments Attachment[]
+}
+
+// A person at the customer. The profile is free text on purpose: how much they
+// know, what they may and may not touch, how to deal with them.
+model EndUser {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  name           String
+  role           String  @default("")
+  // Phone, email, hours: whatever is useful, as written.
+  contact        String  @default("")
+  technicalLevel String  @default("")
+  canTouch       String  @default("")
+  notes          String  @default("")
+  // The customer's contacts are the end users marked here; there is no
+  // separate contacts table.
+  isMainContact  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+enum DeviceType {
+  ROUTER
+  SWITCH
+  SERVER
+  PC
+  NAS
+  FIREWALL
+  ACCESS_POINT
+  PRINTER
+  CLOUD
+  OTHER
+}
+
+// A node on the customer's map. Its icon comes from the type.
+model Device {
+  id         String     @id @default(uuid())
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       DeviceType @default(OTHER)
+  name       String
+
+  // Map coordinates (React Flow), so the diagram looks the same every time.
+  positionX Float @default(0)
+  positionY Float @default(0)
+
+  // Who does what with this device, free text.
+  roles String @default("")
+  notes String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fields          DeviceField[]
+  outgoing        Connection[]    @relation("ConnectionSource")
+  incoming        Connection[]    @relation("ConnectionTarget")
+  attachments     Attachment[]
+  incidents       Incident[]
+  vulnerabilities Vulnerability[]
+  agendaItems     AgendaItem[]
+
+  // Target of the composite foreign keys below: a connection or an attachment
+  // can only point to a device of its own customer.
+  @@unique([id, customerId])
+  @@index([customerId])
+}
+
+// A free field of a device, like a draw.io property: any name, multi-line
+// value, as many as needed. A secret field keeps its value only encrypted in
+// `encryptedValue` (src/lib/crypto.ts, context "device-field:<id>:value") and
+// `value` stays empty; a CHECK constraint in the migration enforces it.
+model DeviceField {
+  id       String @id @default(uuid())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  name           String
+  value          String  @default("")
+  isSecret       Boolean @default(false)
+  encryptedValue String?
+  // Order on the device sheet, chosen by the technician.
+  position       Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId, position])
+}
+
+// An edge on the map between two devices of the same customer.
+model Connection {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sourceId   String
+  source     Device   @relation("ConnectionSource", fields: [sourceId, customerId], references: [id, customerId], onDelete: Cascade)
+  targetId   String
+  target     Device   @relation("ConnectionTarget", fields: [targetId, customerId], references: [id, customerId], onDelete: Cascade)
+
+  // "IPsec VPN", "WAN1", "VLAN 20"...
+  label String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([sourceId])
+  @@index([targetId])
+}
+
+// A screenshot or image of a customer, or of one of its devices when deviceId
+// is set. The file is stored encrypted outside the database; this row holds
+// its metadata.
+model Attachment {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deviceId   String?
+  device     Device?  @relation(fields: [deviceId, customerId], references: [id, customerId], onDelete: Cascade)
+
+  title      String @default("")
+  fileName   String
+  mimeType   String
+  // Size of the original file, in bytes.
+  size       Int
+  // Where the encrypted file lives (a path on disk or an object key).
+  storageKey String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([deviceId])
+}
+
+// Something that went wrong with a device and how it was solved, so the next
+// time it is quicker.
+model Incident {
+  id       String @id @default(uuid())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  occurredAt  DateTime
+  title       String
+  description String    @default("")
+  resolution  String    @default("")
+  // Empty while the incident is still open.
+  resolvedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId, occurredAt])
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// A known weakness of a device (outdated firmware, default password...).
+model Vulnerability {
+  id       String @id @default(uuid())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String    @default("")
+  severity    Severity  @default(MEDIUM)
+  // Empty while it is still open.
+  resolvedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+}
+
+// A dated task on a device, e.g. "test the backup restore".
+model AgendaItem {
+  id       String @id @default(uuid())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  title  String
+  notes  String    @default("")
+  dueAt  DateTime
+  doneAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@index([dueAt])
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  // A secret was shown in clear text.
+  REVEAL
+}
+
+// Who did what and when. It has no foreign key to the entity, so the trail
+// survives the deletion of what it describes.
+model AuditLog {
+  id     String  @id @default(uuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action     AuditAction
+  // The entity names used in encryption contexts: "customer", "device-field"...
+  entityType String
+  entityId   String
+  // What a person needs to read the entry later, e.g. the customer's name.
+  // Never a secret value.
+  summary    String      @default("")
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
