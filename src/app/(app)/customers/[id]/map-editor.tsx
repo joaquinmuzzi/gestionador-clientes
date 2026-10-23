@@ -37,6 +37,7 @@ import {
   updateDevice,
   type MapActionResult,
 } from "./map-actions";
+import { DeviceSheet, type Save } from "./device-sheet";
 import {
   ConnectionEdgeView,
   DeviceNodeView,
@@ -113,17 +114,21 @@ function useAutosave() {
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const save = useCallback((run: () => Promise<MapActionResult>) => {
+  // Resolves with the action's result, or undefined when the request failed.
+  const save: Save = useCallback(<T extends MapActionResult>(run: () => Promise<T>) => {
     setPending((count) => count + 1);
-    queue.current = queue.current
-      .then(run)
-      .then(
-        (result) => {
-          if (result.error) setError(result.error);
-        },
-        () => setError(SAVE_FAILED),
-      )
-      .finally(() => setPending((count) => count - 1));
+    const done = queue.current.then(run).then(
+      (result) => {
+        if (result.error) setError(result.error);
+        return result;
+      },
+      () => {
+        setError(SAVE_FAILED);
+        return undefined;
+      },
+    );
+    queue.current = done.then(() => setPending((count) => count - 1));
+    return done;
   }, []);
 
   // Leaving while a change is on its way would lose it.
@@ -153,6 +158,9 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
   const { screenToFlowPosition, deleteElements } = useReactFlow<DeviceNode, ConnectionEdge>();
   const { save, saving, error } = useAutosave();
   const canvas = useRef<HTMLDivElement>(null);
+  // The device whose sheet is open, if any.
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const closeSheet = useCallback(() => setSheetId(null), []);
 
   const addDevice = (type: DeviceType, at: { x: number; y: number }) => {
     const id = crypto.randomUUID();
@@ -276,6 +284,8 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
   const single = selectedNodes.length + selectedEdges.length === 1;
   const selectedNode = single ? selectedNodes[0] : undefined;
   const selectedEdge = single ? selectedEdges[0] : undefined;
+  // A device deleted while its sheet is open closes it.
+  const sheetNode = nodes.find((node) => node.id === sheetId);
 
   return (
     <div className="flex h-full min-h-0">
@@ -320,6 +330,7 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
           onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDoubleClick={(_, node) => setSheetId(node.id)}
           onBeforeDelete={onBeforeDelete}
           onDelete={onDelete}
           isValidConnection={(connection) => connection.source !== connection.target}
@@ -344,27 +355,39 @@ function Editor({ customerId, map }: { customerId: string; map: CustomerMap }) {
           </p>
         )}
 
-        <div className="absolute top-2 right-2 flex max-w-72 flex-col items-end gap-2">
-          <SaveStatus saving={saving} error={error} />
-          {selectedNode && (
-            <DevicePanel
-              key={selectedNode.id}
-              node={selectedNode}
-              onRename={(name) => renameDevice(selectedNode.id, name)}
-              onSave={(data) => saveDevice(selectedNode.id, data)}
-              onDelete={() => deleteElements({ nodes: [{ id: selectedNode.id }] })}
-            />
-          )}
-          {selectedEdge && (
-            <ConnectionPanel
-              key={selectedEdge.id}
-              edge={selectedEdge}
-              onRelabel={(label) => relabelConnection(selectedEdge.id, label)}
-              onSave={(label) => saveConnection(selectedEdge.id, label)}
-              onDelete={() => deleteElements({ edges: [{ id: selectedEdge.id }] })}
-            />
-          )}
-        </div>
+        {sheetNode ? (
+          <DeviceSheet
+            key={sheetNode.id}
+            customerId={customerId}
+            device={{ id: sheetNode.id, ...sheetNode.data }}
+            save={save}
+            status={<SaveStatus saving={saving} error={error} />}
+            onClose={closeSheet}
+          />
+        ) : (
+          <div className="absolute top-2 right-2 flex max-w-72 flex-col items-end gap-2">
+            <SaveStatus saving={saving} error={error} />
+            {selectedNode && (
+              <DevicePanel
+                key={selectedNode.id}
+                node={selectedNode}
+                onRename={(name) => renameDevice(selectedNode.id, name)}
+                onSave={(data) => saveDevice(selectedNode.id, data)}
+                onOpen={() => setSheetId(selectedNode.id)}
+                onDelete={() => deleteElements({ nodes: [{ id: selectedNode.id }] })}
+              />
+            )}
+            {selectedEdge && (
+              <ConnectionPanel
+                key={selectedEdge.id}
+                edge={selectedEdge}
+                onRelabel={(label) => relabelConnection(selectedEdge.id, label)}
+                onSave={(label) => saveConnection(selectedEdge.id, label)}
+                onDelete={() => deleteElements({ edges: [{ id: selectedEdge.id }] })}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -402,11 +425,13 @@ function DevicePanel({
   node,
   onRename,
   onSave,
+  onOpen,
   onDelete,
 }: {
   node: DeviceNode;
   onRename: (name: string) => void;
   onSave: (data: { name: string; type: DeviceType }) => void;
+  onOpen: () => void;
   onDelete: () => void;
 }) {
   const saved = useRef(node.data);
@@ -458,6 +483,14 @@ function DevicePanel({
           ))}
         </select>
       </label>
+      {/* The same as a double click on the device, for the keyboard too. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white hover:bg-neutral-700"
+      >
+        Abrir ficha
+      </button>
       <button type="button" onClick={onDelete} className={deleteButtonClass}>
         Borrar dispositivo
       </button>
