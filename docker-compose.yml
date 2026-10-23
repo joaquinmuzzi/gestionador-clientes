@@ -1,8 +1,28 @@
 # Development: `docker compose up -d db` starts only Postgres.
 # Everything (app + migrations + Postgres): `docker compose up -d --build`.
 # Ports are bound to 127.0.0.1: they cannot be reached from outside the machine.
+# Production server, HTTPS and backups: docs/deployment.md and docs/backups.md.
 
 x-database-url: &database-url postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+# The backup and recover services share everything but how they mount the attachments.
+x-backup: &backup
+  build: docker/backup
+  environment:
+    PGHOST: db
+    PGUSER: ${POSTGRES_USER}
+    PGPASSWORD: ${POSTGRES_PASSWORD}
+    PGDATABASE: ${POSTGRES_DB}
+    RESTORE_PGHOST: restore-db
+    RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+    BACKUP_CLOUD_REPOSITORY: ${BACKUP_CLOUD_REPOSITORY:-}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}
+    BACKUP_PING_URL: ${BACKUP_PING_URL:-}
+  depends_on:
+    db:
+      condition: service_healthy
 
 services:
   db:
@@ -54,6 +74,82 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  # HTTPS for a public domain (docs/deployment.md). Not started unless asked for:
+  # docker compose --profile https up -d
+  caddy:
+    image: caddy:2.10-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    depends_on:
+      - app
+
+  # Dumps the database and copies it, with the attachments, to the local and cloud repositories
+  # (docs/backups.md). Run by cron: docker compose run --rm backup
+  backup:
+    <<: *backup
+    profiles: ["backup"]
+    volumes:
+      - attachments:/data/attachments:ro
+      - ${BACKUP_LOCAL_DIR:-./backups}:/backups
+      - restore:/restore
+
+  # Disaster recovery onto a new, empty server: docker compose run --rm recover cloud
+  recover:
+    <<: *backup
+    profiles: ["recover"]
+    entrypoint: ["backupctl", "recover"]
+    volumes:
+      - attachments:/data/attachments
+      - ${BACKUP_LOCAL_DIR:-./backups}:/backups
+      - restore:/restore
+
+  # Throwaway database for the restore test (scripts/restore-test.sh). It keeps nothing on disk.
+  restore-db:
+    image: postgres:18-alpine
+    profiles: ["restore-test"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  # Checks the restored data with the app's own code: every secret and screenshot must decrypt.
+  verify-restore:
+    build:
+      context: .
+      target: tools
+    profiles: ["restore-test"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@restore-db:5432/${POSTGRES_DB}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is missing from .env}
+      ATTACHMENTS_DIR: /restore/data/attachments
+    volumes:
+      - restore:/restore:ro
+    command: ["npx", "tsx", "scripts/verify-restore.ts"]
+    depends_on:
+      restore-db:
+        condition: service_healthy
+
 volumes:
   db-data:
   attachments:
+  # Scratch space of the restore test; emptied after every run.
+  restore:
+  caddy-data:
+  caddy-config:

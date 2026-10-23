@@ -9,3 +9,5 @@ playwright-report
 !.env.example
 *.tsbuildinfo
 data
+backups
+restore-tests.log

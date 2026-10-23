@@ -95,10 +95,15 @@ src/
   proxy.ts           redirects visitors without a session cookie to /login
 prisma/              schema, migrations and the development seed
 scripts/user.ts      user management from the terminal
+scripts/restore-test.sh, verify-restore.ts   the restore test (docs/backups.md)
 test/                unit tests (Vitest)
 e2e/                 end-to-end tests (Playwright)
 Dockerfile           production image (standalone Next.js, non-root)
-docker-compose.yml   Postgres, a one-shot migration service and the app
+docker-compose.yml   Postgres, a one-shot migration service, the app, and on demand Caddy
+                     (HTTPS) and the backup services
+docker/backup/       backup image: pg_dump and restic (backupctl.sh)
+Caddyfile            HTTPS in front of the app for a public domain
+docs/                deployment and backups
 CHANGELOG.md         what changed in each release
 ```
 

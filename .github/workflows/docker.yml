@@ -1,11 +1,16 @@
 name: Docker
 
 # Builds the images with Docker Compose and tries them on every change to them: Postgres starts,
-# the migrations run and the app answers with its security headers, as on a real server.
+# the migrations run and the app answers with its security headers, as on a real server. Then it
+# backs up made-up data, tests the restore and recovers it onto empty volumes (docs/backups.md).
 on:
   pull_request:
     paths:
       - "Dockerfile"
+      - "docker/**"
+      - "Caddyfile"
+      - "scripts/**"
+      - ".env.example"
       - ".dockerignore"
       - "docker-compose.yml"
       - "package.json"
@@ -18,6 +23,10 @@ on:
     branches: [main]
     paths:
       - "Dockerfile"
+      - "docker/**"
+      - "Caddyfile"
+      - "scripts/**"
+      - ".env.example"
       - ".dockerignore"
       - "docker-compose.yml"
       - "package.json"
@@ -77,6 +86,79 @@ jobs:
           output=$(docker compose run --rm -T migrate npm run user:create 2>&1 || true)
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -q "Usage:"
+
+      - name: Check the Caddy configuration
+        run: |
+          docker run --rm -e SITE_ADDRESS=gestionador.example.com \
+            -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.10-alpine \
+            caddy validate --config /etc/caddy/Caddyfile
+
+      # Made-up data: the sample customers (with secret fields) and one encrypted screenshot. The
+      # "cloud" copy is a second local repository: restic treats every repository the same way.
+      - name: Load made-up data
+        run: |
+          {
+            echo "RESTIC_PASSWORD=$(openssl rand -base64 32)"
+            echo "BACKUP_LOCAL_DIR=$RUNNER_TEMP/backups"
+            echo "BACKUP_CLOUD_REPOSITORY=/backups/cloud-copy"
+          } >> .env
+          docker compose run --rm -T migrate npm run db:seed
+          volume="$(docker compose config --format json | jq -r .name)_attachments"
+          docker compose run --rm -T -e ATTACHMENTS_DIR=/data/attachments \
+            -v "$volume:/data/attachments" migrate \
+            sh -c 'cat > ci-attachment.ts && npx tsx ci-attachment.ts' <<'EOF'
+          import { newStorageKey, writeAttachmentFile } from "@/lib/attachments/storage";
+          import { db } from "@/lib/db";
+          async function main() {
+            const customer = await db.customer.findFirstOrThrow();
+            const bytes = Buffer.from("89504e470d0a1a0a", "hex"); // a PNG signature
+            const storageKey = newStorageKey();
+            const attachment = await db.attachment.create({
+              data: { customerId: customer.id, fileName: "ci.png", mimeType: "image/png",
+                      size: bytes.length, storageKey },
+            });
+            await writeAttachmentFile(storageKey, attachment.id, bytes);
+            await db.$disconnect();
+          }
+          main();
+          EOF
+
+      - name: Back up and test the restore
+        run: |
+          docker compose run --rm -T backup
+          docker compose run --rm -T backup snapshots cloud
+          scripts/restore-test.sh local
+          scripts/restore-test.sh cloud
+          # With another key nothing decrypts, and the test must say so
+          if ENCRYPTION_KEY=$(openssl rand -base64 32) scripts/restore-test.sh local; then
+            echo "::error::The restore test passed with the wrong ENCRYPTION_KEY."
+            exit 1
+          fi
+          cat restore-tests.log
+
+      - name: Recover onto empty volumes
+        run: |
+          docker compose down -v
+          docker compose up -d --wait db
+          docker compose run --rm -T recover local
+          # A second recover must refuse to overwrite the data
+          if docker compose run --rm -T recover local; then
+            echo "::error::recover ran on a database that is not empty."
+            exit 1
+          fi
+          docker compose up -d
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:3000/login > /dev/null && break; sleep 2; done
+          curl -fs http://127.0.0.1:3000/login > /dev/null
+          # The live data, recovered: everything decrypts and the screenshot is there
+          set -a; . ./.env; set +a
+          volume="$(docker compose config --format json | jq -r .name)_attachments"
+          output=$(docker compose run --rm -T \
+            -e DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" \
+            -e ATTACHMENTS_DIR=/data/attachments -v "$volume:/data/attachments" \
+            migrate npx tsx scripts/verify-restore.ts)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -Eq '^attachments +1$'
+          printf '%s\n' "$output" | grep -Eq '^secret fields +[1-9]'
 
       - name: Report the image size
         run: |

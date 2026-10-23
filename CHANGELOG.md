@@ -61,3 +61,11 @@ behaviour).
   vulnerabilities, tasks, end users, image titles). Results are grouped by customer and device
   with the match marked, and a device result opens the map centred on it with its sheet open.
   Secret fields are never searched or shown.
+- Deployment on a server of its own (`docs/deployment.md`): reached through Tailscale, or through
+  a public domain with Caddy and automatic HTTPS (`docker compose --profile https up -d`).
+- Backups (`docs/backups.md`): `docker compose run --rm backup` dumps the database and copies it
+  with the encrypted screenshots to a local and a cloud restic repository, encrypted with
+  `RESTIC_PASSWORD`, keeping 7 daily, 4 weekly and 6 monthly copies, with an optional ping to a
+  monitor. `scripts/restore-test.sh` restores the latest copy into a throwaway database and
+  checks that every secret and screenshot decrypts; `docker compose run --rm recover` brings a
+  copy back onto a new server. CI backs up, tests and recovers made-up data.
