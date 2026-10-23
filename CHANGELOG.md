@@ -69,3 +69,6 @@ behaviour).
   monitor. `scripts/restore-test.sh` restores the latest copy into a throwaway database and
   checks that every secret and screenshot decrypts; `docker compose run --rm recover` brings a
   copy back onto a new server. CI backs up, tests and recovers made-up data.
+- A user guide in Spanish (`docs/user-guide.md`), one short task per section with screenshots of
+  the sample data, and a one-page sheet of what the user looks after (`docs/user-checklist.md`):
+  the two keys kept offline, the monthly restore test and what to do after losing a phone.

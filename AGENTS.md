@@ -73,7 +73,8 @@ docker/backup/    backup image (Postgres client tools and restic) and its backup
 Caddyfile         HTTPS in front of the app for a public domain (Compose profile "https")
 test/             Vitest unit tests, mirroring src/
 e2e/              Playwright end-to-end tests
-docs/             deployment.md and backups.md
+docs/             deployment.md and backups.md (English); user-guide.md and user-checklist.md
+                  (Spanish, for the person who uses the app) with screenshots in images/
 ```
 
 Where things go:
@@ -197,7 +198,10 @@ msinfo32), importing draw.io diagrams, version history of passwords.
   requests, documentation, test names and command-line output. Comments explain *why*, not what.
 - **The interface text is in Spanish (Rioplatense)**, because the person who uses the app works
   in Spanish: labels, buttons, page titles and the error messages shown in the browser. Nothing
-  else is in Spanish.
+  else is in Spanish, except the two documents written for that person: `docs/user-guide.md` and
+  `docs/user-checklist.md`. They address "el usuario", never a named person, and their
+  screenshots (`docs/images/user-guide/`) show only the made-up sample data from `prisma/seed.ts`.
+  When a change alters what the user sees, update the guide and its screenshots.
 - **TypeScript is strict.** ESLint (`eslint-config-next`) runs on the whole repository. There is
   no Prettier config: follow the surrounding style (double quotes, semicolons, two spaces, about
   100 columns) and do not reformat files you did not change.
