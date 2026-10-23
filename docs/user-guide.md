@@ -38,9 +38,12 @@ Si fallás varias veces seguidas, la app te frena unos minutos: esperá y volvé
 
 ## 2. Cargar un cliente
 
-![Lista de clientes](images/user-guide/02-clientes.png)
+![Pantalla de inicio con los clientes](images/user-guide/02-clientes.png)
 
-La pantalla principal es la lista de clientes. El cuadro de arriba filtra la lista por nombre.
+La pantalla de inicio muestra los totales, una tarjeta por cliente (con un dibujito de su mapa) y,
+al costado, las próximas tareas, los incidentes abiertos y los últimos cambios. El cuadro
+**Filtrar por nombre…** filtra las tarjetas. **Incidentes y agenda**, arriba, junta las tareas de
+la semana y los incidentes de todos los clientes; cada renglón abre la ficha del dispositivo.
 
 1. Tocá **Nuevo cliente**.
 2. Poné el nombre y, si querés, notas: dirección, horarios, cómo se trabaja con ellos.
@@ -58,8 +61,8 @@ que tiene (dispositivos, campos, capturas).
 
 El mapa es la página principal de cada cliente.
 
-- **Agregar un dispositivo:** hacé click en un tipo de la lista de la izquierda (Router, Switch,
-  Servidor, PC, NAS…) o arrastralo al lugar del mapa donde lo quieras.
+- **Agregar un dispositivo:** hacé click en un tipo de la barra de arriba del mapa (Router,
+  Switch, Servidor, PC, NAS…) o arrastralo al lugar del mapa donde lo quieras.
 - **Moverlo:** arrastralo. La posición se guarda sola.
 - **Renombrarlo o cambiarle el tipo:** hacé un click en el dispositivo y usá el panel que aparece
   a la derecha.
@@ -69,7 +72,7 @@ El mapa es la página principal de cada cliente.
 - **Conectar dos dispositivos:** al seleccionar uno aparecen puntos en sus bordes. Arrastrá
   desde un punto hasta el otro dispositivo.
 - **Ponerle nombre a una conexión** (WAN1, VPN IPsec, VLAN 20…): hacé click en la línea y escribí
-  la etiqueta.
+  la etiqueta. Las que dicen VPN, IPsec o túnel se dibujan punteadas y en azul.
 
 ![Conexión seleccionada con su etiqueta](images/user-guide/06-conexion.png)
 
@@ -78,8 +81,9 @@ El mapa es la página principal de cada cliente.
 - **Moverte por el mapa:** arrastrá el fondo para desplazarte y usá la rueda del mouse o los
   botones + y − para el zoom. El botón de abajo de todo encuadra el mapa entero.
 
-Un dispositivo con un incidente abierto o una tarea vencida aparece marcado en el mapa, para que
-se vea de un vistazo qué necesita atención.
+Debajo de cada dispositivo se ve su IP, sacada del primer campo que se llame "IP" (o "IP LAN",
+"Dirección IP"…) y no sea secreto. Un dispositivo con un incidente abierto o una tarea vencida
+aparece marcado en naranja, para que se vea de un vistazo qué necesita atención.
 
 ## 4. Anotar los datos de un dispositivo
 
@@ -145,7 +149,7 @@ Cada lista tiene su botón **Agregar…**. Un click en un renglón lo abre para 
 
 ![Usuarios finales de un cliente](images/user-guide/09-usuarios-finales.png)
 
-Debajo del mapa está **Usuarios finales**: las personas del cliente con las que tratás. Tocá
+Al costado del mapa (o debajo, en pantallas chicas) está **Usuarios finales**: las personas del cliente con las que tratás. Tocá
 **Agregar persona** y completá lo que sirva: puesto, nivel técnico, contacto, **qué puede y qué
 no puede tocar** y **cómo tratarlo**. Una de ellas se puede marcar como **contacto principal**.
 

@@ -35,7 +35,7 @@ import {
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 const labelClass = "flex flex-col gap-1 text-xs font-medium text-neutral-700";
 
 const noSubscription = () => () => {};
@@ -110,8 +110,8 @@ export function DeviceRecords({
   const newDay = () => today ?? localDay(new Date());
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="rounded-md bg-neutral-100 px-3 py-2 text-xs text-neutral-600">
+    <div className="flex flex-col gap-4">
+      <p className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-700">
         Incidentes, vulnerabilidades y agenda se guardan sin cifrar, para que la búsqueda los
         encuentre: no pongas claves acá, usá un campo secreto.
       </p>
@@ -266,7 +266,7 @@ export function DeviceRecords({
             closedLabel="Hecha"
             openLabel={
               today && isOverdue(item.dueAt, today) ? (
-                <span className="font-medium text-red-700">Vencida</span>
+                <span className="font-medium text-warn-ink">Vencida</span>
               ) : (
                 "Pendiente"
               )
@@ -318,9 +318,9 @@ function RecordSection({
   children: ReactNode[];
 }) {
   return (
-    <section aria-label={heading} className="flex flex-col gap-2">
+    <section aria-label={heading} className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-neutral-800">{heading}</h3>
+        <h3 className="text-base font-semibold text-neutral-900">{heading}</h3>
         <button
           type="button"
           onClick={onAdd}

@@ -126,3 +126,23 @@ export function defaultDeviceName(type: DeviceType, existingNames: Iterable<stri
     if (!taken.has(candidate.toLowerCase())) return candidate;
   }
 }
+
+// The address shown under a device on the map: the first field named like an
+// IP ("IP", "IP LAN", "IP de gestión", "Dirección IP"), its first line only.
+// Callers pass non-secret fields only, in sheet order.
+const ADDRESS_NAME = /^(ip|dirección ip|direccion ip)(\s|$)/i;
+// What the map query asks the database for; deviceAddress decides.
+export const ADDRESS_FIELD_PREFIXES = ["ip", "dirección ip", "direccion ip"];
+const ADDRESS_MAX_LENGTH = 40;
+
+export function deviceAddress(fields: { name: string; value: string }[]): string {
+  const field = fields.find((candidate) => ADDRESS_NAME.test(collapseSpaces(candidate.name)));
+  const line = field?.value.split("\n", 1)[0].trim() ?? "";
+  return line.length > ADDRESS_MAX_LENGTH ? `${line.slice(0, ADDRESS_MAX_LENGTH - 1)}…` : line;
+}
+
+// A VPN is drawn dashed and blue, like in draw.io diagrams, so the tunnels
+// stand out from the cables.
+export function isTunnel(label: string): boolean {
+  return /\b(vpn|ipsec|t[uú]nel|wireguard)/i.test(label);
+}

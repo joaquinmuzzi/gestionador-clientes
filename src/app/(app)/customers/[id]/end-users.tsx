@@ -18,7 +18,7 @@ import { deleteEndUser, saveEndUser } from "./end-user-actions";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 const labelClass = "flex flex-col gap-1 text-xs font-medium text-neutral-700";
 
 type Entry = EndUser & { draft?: boolean };
@@ -55,9 +55,9 @@ export function EndUsers({ customerId, initial }: { customerId: string; initial:
   };
 
   return (
-    <section aria-labelledby="end-users" className="flex flex-col gap-3">
+    <section aria-labelledby="end-users" className="@container flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="end-users" className="text-lg font-semibold">
+        <h2 id="end-users" className="text-base font-semibold">
           Usuarios finales
         </h2>
         <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function EndUsers({ customerId, initial }: { customerId: string; initial:
           <button
             type="button"
             onClick={add}
-            className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white hover:bg-neutral-700"
+            className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
           >
             Agregar persona
           </button>
@@ -79,7 +79,7 @@ export function EndUsers({ customerId, initial }: { customerId: string; initial:
           tocar.
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3 @xl:grid-cols-2">
           {endUsers.map((entry) => (
             <EndUserCard
               key={entry.id}

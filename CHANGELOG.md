@@ -72,3 +72,8 @@ behaviour).
 - A user guide in Spanish (`docs/user-guide.md`), one short task per section with screenshots of
   the sample data, and a one-page sheet of what the user looks after (`docs/user-checklist.md`):
   the two keys kept offline, the monthly restore test and what to do after losing a phone.
+- The interface follows the mock-up: IBM Plex fonts, a navy header with the search, a home page
+  with totals, customer cards with a thumbnail of their map, upcoming tasks, open incidents and
+  recent activity, and a new "Incidentes y agenda" page (`/agenda`) with the week's tasks and a
+  filterable table of incidents. The map shows each device's IP under its icon (from a
+  non-secret field named "IP…"), draws VPN connections dashed and has a legend.

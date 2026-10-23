@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { collapseSpaces, customerIdSchema } from "./input";
+import { customerIdSchema } from "./input";
 
 // Customer reads shared by the pages and Server Actions in src/app/(app)/customers.
 // Callers check the session first (requireUser).
@@ -11,15 +11,6 @@ export const SEARCH_MAX_LENGTH = 100;
 // search box would match everything.
 export function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, "\\$&");
-}
-
-export async function listCustomers(search: string) {
-  const term = collapseSpaces(search).slice(0, SEARCH_MAX_LENGTH);
-  return db.customer.findMany({
-    where: term ? { name: { contains: escapeLikePattern(term), mode: "insensitive" } } : undefined,
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, notes: true, _count: { select: { devices: true } } },
-  });
 }
 
 export async function getCustomer(id: string) {

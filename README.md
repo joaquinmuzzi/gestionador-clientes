@@ -30,8 +30,11 @@ Available now:
 - Login with email, password (argon2id) and a code from an authenticator app (TOTP), with short,
   revocable sessions and rate limiting.
 - Users are created from the command line; there is no sign-up page.
-- Customers: a list with a search by name, and pages to create, edit and delete them (deleting
-  asks for the customer's name). Every change goes to an audit log.
+- A home page with every customer as a card, the totals, the upcoming tasks, the open incidents
+  and the latest changes, and an "Incidentes y agenda" page with the week's tasks and the
+  incidents of every customer.
+- Customers: a filter by name, and pages to create, edit and delete them (deleting asks for the
+  customer's name). Every change goes to an audit log.
 - A network map per customer: add devices from a palette (click or drag), move them, connect
   them with an optional label, rename and delete them. Every change is saved on its own.
 - Device sheets opened with a double click: unlimited free fields and secret fields.

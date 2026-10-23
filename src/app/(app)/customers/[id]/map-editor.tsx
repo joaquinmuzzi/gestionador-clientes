@@ -3,6 +3,7 @@
 import "@xyflow/react/dist/style.css";
 import {
   Background,
+  BackgroundVariant,
   ConnectionMode,
   Controls,
   MiniMap,
@@ -69,12 +70,12 @@ const ariaLabelConfig = {
 
 const DRAG_TYPE = "application/x-device-type";
 // About half a device box, so a new device lands centred where it is dropped.
-const NODE_HALF_SIZE = { x: 56, y: 36 };
+const NODE_HALF_SIZE = { x: 64, y: 40 };
 
 const NO_ALERTS: DeviceAlerts = { openIncidents: 0, nextDueAt: null };
 
 // Room taken by a device on the map, a bit more than its box.
-const SLOT = { x: 140, y: 110 };
+const SLOT = { x: 160, y: 120 };
 
 function freeSpot(start: { x: number; y: number }, nodes: DeviceNode[]): { x: number; y: number } {
   for (let i = 0; i < 25; i++) {
@@ -93,7 +94,7 @@ function toNode(device: CustomerMap["devices"][number]): DeviceNode {
     id: device.id,
     type: "device",
     position: { x: device.positionX, y: device.positionY },
-    data: { name: device.name, type: device.type, alerts: device.alerts },
+    data: { name: device.name, type: device.type, address: device.address, alerts: device.alerts },
     ariaLabel: device.name,
   };
 }
@@ -148,7 +149,7 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
         id,
         type: "device",
         position,
-        data: { name, type, alerts: NO_ALERTS },
+        data: { name, type, address: "", alerts: NO_ALERTS },
         ariaLabel: name,
         selected: true,
       },
@@ -249,9 +250,10 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
     save(() => updateDevice(customerId, { id, ...data }));
   };
 
-  const updateAlerts = (id: string, alerts: DeviceAlerts) =>
+  // The sheet reports what the map shows of it: the flag and the address.
+  const updateNodeData = (id: string, data: Partial<DeviceNode["data"]>) =>
     setNodes((current) =>
-      current.map((node) => (node.id === id ? { ...node, data: { ...node.data, alerts } } : node)),
+      current.map((node) => (node.id === id ? { ...node, data: { ...node.data, ...data } } : node)),
     );
 
   const relabelConnection = (id: string, label: string) =>
@@ -278,12 +280,14 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
   const sheetNode = nodes.find((node) => node.id === sheetId);
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       <aside
         aria-label="Agregar dispositivo"
-        className="flex w-36 shrink-0 flex-col gap-1 overflow-y-auto border-r border-neutral-200 p-2"
+        className="flex flex-wrap items-center gap-1.5 border-b border-neutral-200 px-3 py-2 text-sm"
       >
-        <p className="px-1 pb-1 text-xs text-neutral-500">Click o arrastrá al mapa</p>
+        <span className="mr-1 text-neutral-600" title="Click o arrastrá al mapa">
+          Agregar:
+        </span>
         {DEVICE_TYPES.map((type) => (
           <button
             key={type}
@@ -294,9 +298,9 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
               event.dataTransfer.effectAllowed = "copy";
             }}
             onClick={() => addAtCentre(type)}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-800 hover:bg-neutral-100"
+            className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1 text-neutral-900 hover:border-accent-line hover:bg-accent-soft"
           >
-            <DeviceIcon type={type} className="size-5 shrink-0" />
+            <DeviceIcon type={type} className="size-4 shrink-0" />
             {DEVICE_TYPE_LABELS[type]}
           </button>
         ))}
@@ -304,7 +308,7 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
 
       <div
         ref={canvas}
-        className="relative min-w-0 flex-1"
+        className="relative min-h-0 flex-1 bg-[#fbfbfc]"
         onDragOver={(event) => {
           if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
           event.preventDefault();
@@ -337,16 +341,18 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
           ariaLabelConfig={ariaLabelConfig}
           proOptions={{ hideAttribution: true }}
         >
-          <Background gap={24} />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d5dae1" />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable />
+          <MiniMap pannable zoomable nodeColor="#c7d5f6" nodeBorderRadius={6} />
         </ReactFlow>
 
         {nodes.length === 0 && (
           <p className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center text-neutral-500">
-            El mapa está vacío. Agregá el primer dispositivo desde la izquierda.
+            El mapa está vacío. Agregá el primer dispositivo desde la barra de arriba.
           </p>
         )}
+
+        <MapLegend />
 
         {sheetNode ? (
           <DeviceSheet
@@ -356,7 +362,8 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
             save={save}
             status={<SaveStatus saving={saving} error={error} />}
             onClose={closeSheet}
-            onAlertsChange={(alerts) => updateAlerts(sheetNode.id, alerts)}
+            onAlertsChange={(alerts) => updateNodeData(sheetNode.id, { alerts })}
+            onAddressChange={(address) => updateNodeData(sheetNode.id, { address })}
           />
         ) : (
           <div className="absolute top-2 right-2 flex max-w-72 flex-col items-end gap-2">
@@ -388,10 +395,10 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
 }
 
 const panelClass =
-  "flex w-64 flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-3 shadow-md";
+  "flex w-64 flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-md";
 const fieldClass =
   "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 const deleteButtonClass =
   "self-start rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50";
 
@@ -463,7 +470,7 @@ function DevicePanel({
       <button
         type="button"
         onClick={onOpen}
-        className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white hover:bg-neutral-700"
+        className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
       >
         Abrir ficha
       </button>
@@ -521,5 +528,25 @@ function ConnectionPanel({
         Borrar conexión
       </button>
     </section>
+  );
+}
+
+// What the colours and lines on the map mean.
+function MapLegend() {
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-14 z-[5] hidden flex-wrap gap-3.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] text-neutral-700 sm:flex">
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 border-t-2 border-[#9aa3b0]" />
+        Cable
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 border-t-2 border-dashed border-accent" />
+        VPN
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="size-2.5 rounded-full bg-warn" />
+        Requiere atención
+      </span>
+    </div>
   );
 }

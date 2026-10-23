@@ -5,7 +5,7 @@ import { login, type LoginState } from "./actions";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-neutral-900 " +
-  "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
@@ -55,7 +55,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
+        className="rounded-md bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong disabled:opacity-60"
       >
         {pending ? "Ingresando…" : "Ingresar"}
       </button>
