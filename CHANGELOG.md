@@ -43,3 +43,9 @@ behaviour).
   device type; secret fields encrypted with AES-256-GCM that reach the browser only when shown
   or copied, hide again after 30 seconds and leave a `REVEAL` audit entry; and free text for
   roles (who does what) and notes. Everything is saved automatically and audited.
+- Screenshots and images (PNG, JPG, WebP, up to 10 MB) on the device sheet and on the customer
+  page: added with a button, by dropping files or by pasting with Ctrl+V, with an editable title,
+  a full-size view, download and deletion. Files are encrypted with AES-256-GCM before they reach
+  the disk (`ATTACHMENTS_DIR`, an `attachments` volume in Docker Compose), are served only to a
+  logged-in user and never cached, and every upload, view, rename and deletion is audited.
+  Deleting a customer or a device also removes its encrypted files.

@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
+import { removeAttachmentFiles } from "@/lib/attachments/storage";
 import { requireUser } from "@/lib/auth/session";
 import {
   confirmsDeletion,
@@ -105,11 +106,15 @@ export async function deleteCustomer(
   }
 
   // The cascade removes its devices, fields, connections, end users and
-  // attachment rows; once attachments store files, those have to be removed
-  // here too. The audit entry keeps the name.
-  await db.$transaction([
-    db.customer.delete({ where: { id: customer.id } }),
-    db.auditLog.create({
+  // attachment rows (its devices' too); their encrypted files are removed once
+  // the rows are gone. The audit entry keeps the name.
+  const storageKeys = await db.$transaction(async (tx) => {
+    const attachments = await tx.attachment.findMany({
+      where: { customerId: customer.id },
+      select: { storageKey: true },
+    });
+    await tx.customer.delete({ where: { id: customer.id } });
+    await tx.auditLog.create({
       data: {
         userId: user.id,
         action: "DELETE",
@@ -117,8 +122,10 @@ export async function deleteCustomer(
         entityId: customer.id,
         summary: customer.name,
       },
-    }),
-  ]);
+    });
+    return attachments.map((attachment) => attachment.storageKey);
+  });
+  await removeAttachmentFiles(storageKeys);
 
   redirect("/");
 }

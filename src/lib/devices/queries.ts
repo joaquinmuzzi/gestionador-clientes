@@ -1,3 +1,4 @@
+import { attachmentSelect } from "@/lib/attachments/queries";
 import { db } from "@/lib/db";
 
 // What the device sheet shows when it opens. A secret field comes without its
@@ -17,6 +18,7 @@ export async function getDeviceSheet(customerId: string, deviceId: string) {
         orderBy: [{ position: "asc" }, { createdAt: "asc" }],
         select: { id: true, name: true, value: true, isSecret: true },
       },
+      attachments: { orderBy: { createdAt: "asc" }, select: attachmentSelect },
     },
   });
   return device;

@@ -21,6 +21,7 @@ import {
   updateDeviceTexts,
   updateField,
 } from "./device-actions";
+import { AttachmentGallery } from "./attachment-gallery";
 
 // The device sheet, opened with a double click on the map. It lies over the
 // right side of the map so the diagram stays in view, and saves every change
@@ -235,6 +236,8 @@ function SheetBody({
           ))}
         </div>
       </section>
+
+      <AttachmentGallery customerId={customerId} deviceId={sheet.id} initial={sheet.attachments} />
 
       <DeviceTexts customerId={customerId} sheet={sheet} save={save} />
     </div>
