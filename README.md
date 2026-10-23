@@ -5,8 +5,8 @@ passwords (encrypted), screenshots of complex configurations, incidents and an a
 an IT support technician who looks after many small companies and should not have to keep all of
 it in their head.
 
-> **Status:** early development. Login with two-factor authentication and the customer list
-> work; the map and the device sheets are being built (see [CHANGELOG.md](CHANGELOG.md)).
+> **Status:** early development. Login with two-factor authentication, the customer list and
+> the network map work; the device sheets are being built (see [CHANGELOG.md](CHANGELOG.md)).
 
 ## Why Gestionador de Clientes?
 
@@ -32,10 +32,12 @@ Available now:
 - Users are created from the command line; there is no sign-up page.
 - Customers: a list with a search by name, and pages to create, edit and delete them (deleting
   asks for the customer's name). Every change goes to an audit log.
+- A network map per customer: add devices from a palette (click or drag), move them, connect
+  them with an optional label, rename and delete them. Every change is saved on its own.
 - Application-level encryption (AES-256-GCM) for every secret.
 - Runs on your own server with Docker Compose.
 
-Planned for the first version: the network map, device sheets with free and secret
+Planned for the first version: device sheets with free and secret
 fields, screenshots, incidents, vulnerabilities, an agenda, end-user profiles and a global
 search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
 

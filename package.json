@@ -25,6 +25,7 @@
     "@oslojs/otp": "1.1.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "@xyflow/react": "12.12.0",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
