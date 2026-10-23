@@ -58,7 +58,8 @@ The tests are organised like this:
 - `e2e/` holds the **end-to-end tests** (Playwright): redirects without a session, security
   headers, login and logout, the session cookie, the idle timeout, the generic login error, TOTP
   replay, the rate limit, the customer pages, the map editor, the device sheet, attachments,
-  incidents, vulnerabilities, the agenda, end users and the rules the database enforces (secret
+  incidents, vulnerabilities, the agenda, end users, the global search (which never finds a
+  secret) and the rules the database enforces (secret
   fields, connections between customers). They create their own user (`e2e@example.test`) and
   use documentation IPs (`192.0.2.x`), so they do not touch your development data.
 
