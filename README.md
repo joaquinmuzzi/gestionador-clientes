@@ -34,11 +34,13 @@ Available now:
   asks for the customer's name). Every change goes to an audit log.
 - A network map per customer: add devices from a palette (click or drag), move them, connect
   them with an optional label, rename and delete them. Every change is saved on its own.
-- Application-level encryption (AES-256-GCM) for every secret.
+- Device sheets opened with a double click: unlimited free fields and secret fields.
+- Screenshots and images on each device and customer (pasted with Ctrl+V, dropped or uploaded),
+  stored encrypted.
+- Application-level encryption (AES-256-GCM) for every secret and every image.
 - Runs on your own server with Docker Compose.
 
-Planned for the first version: device sheets with free and secret
-fields, screenshots, incidents, vulnerabilities, an agenda, end-user profiles and a global
+Planned for the first version: incidents, vulnerabilities, an agenda, end-user profiles and a global
 search. The details are in [AGENTS.md](AGENTS.md#5-domain-model).
 
 The interface is in Spanish.
@@ -79,6 +81,9 @@ docker compose run --rm migrate npm run user:create -- you@example.com
 
 The app is served on <http://localhost:3000> and Postgres on `localhost:5432`, both reachable
 only from the same machine. To use it from another machine, put HTTPS in front of it.
+
+Screenshots are stored encrypted in the `attachments` volume, not in the database: a backup
+needs both the database and that volume.
 
 **Keep `ENCRYPTION_KEY` somewhere safe and separate from the backups.** Without it, the
 encrypted secrets cannot be recovered.

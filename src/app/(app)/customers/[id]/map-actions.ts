@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma } from "@/generated/prisma/client";
+import { removeAttachmentFiles } from "@/lib/attachments/storage";
 import { requireUser } from "@/lib/auth/session";
 import { customerIdSchema } from "@/lib/customers/input";
 import { db } from "@/lib/db";
@@ -181,7 +182,7 @@ export async function deleteMapElements(
   if (!parsed.success) return { error: firstIssue(parsed.error) };
   const { deviceIds, connectionIds } = parsed.data;
 
-  await db.$transaction(async (tx) => {
+  const storageKeys = await db.$transaction(async (tx) => {
     const devices = await tx.device.findMany({
       where: { id: { in: deviceIds }, customerId },
       select: { id: true, name: true },
@@ -190,9 +191,13 @@ export async function deleteMapElements(
       where: { id: { in: connectionIds }, customerId },
       select: { id: true, label: true },
     });
+    const attachments = await tx.attachment.findMany({
+      where: { deviceId: { in: deviceIds }, customerId },
+      select: { storageKey: true },
+    });
     // The cascade removes the devices' fields, connections, incidents and
-    // attachment rows; once attachments store files, those have to be removed
-    // here too.
+    // attachment rows; the attachments' encrypted files go once the rows are
+    // gone.
     await tx.connection.deleteMany({ where: { id: { in: connectionIds }, customerId } });
     await tx.device.deleteMany({ where: { id: { in: deviceIds }, customerId } });
     await tx.auditLog.createMany({
@@ -213,6 +218,8 @@ export async function deleteMapElements(
         })),
       ],
     });
+    return attachments.map((attachment) => attachment.storageKey);
   });
+  await removeAttachmentFiles(storageKeys);
   return {};
 }

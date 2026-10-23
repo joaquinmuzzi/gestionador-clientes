@@ -126,7 +126,7 @@ test("deleting asks for the name and removes everything the customer holds", asy
       fileName: "captura.png",
       mimeType: "image/png",
       size: 1,
-      storageKey: `e2e/${randomUUID()}`,
+      storageKey: randomUUID(),
     },
   });
 

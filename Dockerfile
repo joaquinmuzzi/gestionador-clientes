@@ -25,6 +25,8 @@ ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
+# Mount point of the attachments volume; a new volume copies this ownership.
+RUN mkdir -p /data/attachments && chown node:node /data/attachments
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]
