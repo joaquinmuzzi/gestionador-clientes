@@ -39,7 +39,7 @@ actualizaciones y los backups los hace quien administra el servidor, siguiendo
 
 - [ ] Hacer junto con quien administra el servidor la recuperación completa en otra máquina,
       usando solo las claves guardadas y el backup de la nube
-      ([Disaster recovery](backups.md#disaster-recovery)). Es la única forma de saber que las
+      ([Recuperación ante desastres](backups.md#recuperación-ante-desastres)). Es la única forma de saber que las
       claves guardadas son las correctas.
 
 ## Si pasa algo

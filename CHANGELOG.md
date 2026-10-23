@@ -77,3 +77,8 @@ behaviour).
   recent activity, and a new "Incidentes y agenda" page (`/agenda`) with the week's tasks and a
   filterable table of incidents. The map shows each device's IP under its icon (from a
   non-secret field named "IP…"), draws VPN connections dashed and has a legend.
+
+### Changed
+
+- The server documents (`docs/deployment.md`, `docs/backups.md`) are now in Spanish, like the rest
+  of `docs/`, and refer to "el usuario" instead of a named person.

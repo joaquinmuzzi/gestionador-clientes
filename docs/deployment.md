@@ -1,20 +1,22 @@
-# Deployment
+# Instalación en el servidor
 
-How to run Gestionador de Clientes on a server of your own with Docker Compose. Backups are in
-[backups.md](backups.md); set them up on the same day as the server, before loading real data.
+Cómo correr Gestionador de Clientes en un servidor propio con Docker Compose. Los backups están en
+[backups.md](backups.md); configuralos el mismo día que el servidor, antes de cargar datos reales.
 
-The app holds passwords and screenshots of many companies, so the recommended setup keeps it off
-the public internet: the technician reaches it through a private network (Tailscale), and nothing
-on the server is open to the world except SSH.
+La app guarda contraseñas y capturas de muchas empresas, así que la configuración recomendada la
+deja fuera de internet: el técnico entra por una red privada (Tailscale) y en el servidor no queda
+nada abierto al mundo salvo SSH.
 
-## 1. The server
+## 1. El servidor
 
-- Any 64-bit Linux with Docker Engine and the Docker Compose plugin. Ubuntu Server 24.04 LTS or
-  Debian 12 are the simplest. It can be a machine at the office or a small VPS.
-- 2 GB of RAM and 20 GB of disk are enough to start; screenshots are what grows.
-- A second disk or a NAS for the local backup copy (not the disk the server runs on).
-- Basic hardening: SSH with keys only (`PasswordAuthentication no`), automatic security updates
-  (`unattended-upgrades` on Ubuntu and Debian) and a firewall that only lets SSH in:
+- Cualquier Linux de 64 bits con Docker Engine y el plugin Docker Compose. Ubuntu Server 24.04 LTS
+  o Debian 12 son lo más simple. Puede ser una máquina en la oficina o un VPS chico.
+- Para empezar alcanzan 2 GB de RAM y 20 GB de disco; lo que crece son las capturas.
+- Un segundo disco o un NAS para la copia local de los backups (no el disco donde corre el
+  servidor).
+- Seguridad básica: SSH solo con claves (`PasswordAuthentication no`), actualizaciones de
+  seguridad automáticas (`unattended-upgrades` en Ubuntu y Debian) y un firewall que solo deje
+  entrar SSH:
 
   ```bash
   sudo ufw default deny incoming
@@ -22,12 +24,12 @@ on the server is open to the world except SSH.
   sudo ufw enable
   ```
 
-  Docker bypasses `ufw` for the ports it publishes. That is why `docker-compose.yml` binds the app
-  and Postgres to `127.0.0.1`: they are never reachable from outside the machine.
+  Docker se saltea `ufw` en los puertos que publica. Por eso `docker-compose.yml` ata la app y
+  Postgres a `127.0.0.1`: nunca se puede llegar a ellos desde fuera de la máquina.
 
-Install Docker from its official repository: <https://docs.docker.com/engine/install/>.
+Instalá Docker desde su repositorio oficial: <https://docs.docker.com/engine/install/>.
 
-## 2. The code and the `.env` file
+## 2. El código y el archivo `.env`
 
 ```bash
 sudo mkdir -p /opt/gestionador-clientes && sudo chown "$USER" /opt/gestionador-clientes
@@ -37,96 +39,99 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-The repository is private: clone it with a read-only deploy key or a fine-grained token limited to
-this repository.
+El repositorio es privado: clonalo con una deploy key de solo lectura o con un token
+fine-grained limitado a este repositorio.
 
-Fill in `.env`:
+Completá `.env`:
 
-| Variable | Value |
+| Variable | Valor |
 |---|---|
-| `POSTGRES_PASSWORD` | A long random password, letters and digits only: `openssl rand -hex 24` |
+| `POSTGRES_PASSWORD` | Una contraseña larga y aleatoria, solo letras y números: `openssl rand -hex 24` |
 | `ENCRYPTION_KEY` | `openssl rand -base64 32` |
 | `RESTIC_PASSWORD` | `openssl rand -base64 32` |
-| `BACKUP_*`, `AWS_*` | See [backups.md](backups.md#setup) |
-| `SITE_ADDRESS` | Empty with Tailscale; the domain with Caddy (section 4) |
+| `BACKUP_*`, `AWS_*` | Ver [backups.md](backups.md#configuración) |
+| `SITE_ADDRESS` | Vacía con Tailscale; el dominio con Caddy (sección 4) |
 
-`DATABASE_URL` and `ATTACHMENTS_DIR` are only for development: Docker Compose sets its own.
+`DATABASE_URL` y `ATTACHMENTS_DIR` son solo para desarrollo: Docker Compose pone los suyos.
 
-**Before going on, copy `ENCRYPTION_KEY` and `RESTIC_PASSWORD` to a password manager and to a
-printed sheet kept in a safe place.** They are not inside the backups on purpose: without
-`ENCRYPTION_KEY` no secret or screenshot can be decrypted, and without `RESTIC_PASSWORD` no backup
-can be opened. Never change `ENCRYPTION_KEY` once there is data.
+**Antes de seguir, copiá `ENCRYPTION_KEY` y `RESTIC_PASSWORD` en un gestor de contraseñas y en una
+hoja impresa guardada en un lugar seguro.** No están dentro de los backups a propósito: sin
+`ENCRYPTION_KEY` no se puede descifrar ningún secreto ni captura, y sin `RESTIC_PASSWORD` no se
+puede abrir ningún backup. Nunca cambies `ENCRYPTION_KEY` una vez que hay datos.
 
-## 3. Start the app
+## 3. Arrancar la app
 
 ```bash
 docker compose up -d --build
 docker compose run --rm migrate npm run user:create -- tecnico@example.com
 ```
 
-`up` starts Postgres, applies the migrations and starts the app on `127.0.0.1:3000`. The second
-command creates the technician's user and shows the QR code for the authenticator app.
+`up` arranca Postgres, aplica las migraciones y levanta la app en `127.0.0.1:3000`. El segundo
+comando crea el usuario del técnico y muestra el código QR para la app de autenticación.
 
-The session cookie only works over HTTPS (or on `localhost`), so the app is used through one of
-the two options below, never as `http://<server-ip>:3000`.
+La cookie de sesión solo funciona con HTTPS (o en `localhost`), así que la app se usa por alguna de
+las dos opciones de abajo, nunca como `http://<ip-del-servidor>:3000`.
 
-## 4. Access
+## 4. Acceso
 
-### Option A: Tailscale (recommended)
+### Opción A: Tailscale (recomendada)
 
-Tailscale builds a private network between the server and the technician's devices. Nothing is
-opened on the server's firewall, and the connection uses HTTPS with a valid certificate.
+Tailscale arma una red privada entre el servidor y los dispositivos del técnico. No se abre nada
+en el firewall del servidor y la conexión usa HTTPS con un certificado válido.
 
-1. Create a Tailscale account and, in the admin console, turn on MagicDNS and HTTPS certificates
-   (DNS page).
-2. On the server: install Tailscale (<https://tailscale.com/download/linux>), run
-   `sudo tailscale up`, and then publish the app inside the private network:
+1. Creá una cuenta de Tailscale y, en la consola de administración, activá MagicDNS y los
+   certificados HTTPS (página DNS).
+2. En el servidor: instalá Tailscale (<https://tailscale.com/download/linux>), corré
+   `sudo tailscale up` y después publicá la app dentro de la red privada:
 
    ```bash
    sudo tailscale serve --bg 3000
    ```
 
-3. Install Tailscale on the technician's computer and phone with the same account.
-4. Open `https://<server-name>.<tailnet>.ts.net` (the address `tailscale serve status` shows).
+3. Instalá Tailscale en la computadora y el celular del técnico con la misma cuenta.
+4. Abrí `https://<nombre-del-servidor>.<tailnet>.ts.net` (la dirección que muestra
+   `tailscale serve status`).
 
-`tailscale serve` (not `funnel`) keeps the app inside the private network; it survives reboots.
+`tailscale serve` (no `funnel`) mantiene la app dentro de la red privada y sobrevive a los
+reinicios.
 
-### Option B: a public domain with Caddy
+### Opción B: un dominio público con Caddy
 
-Only if the app must be reachable from devices that cannot run Tailscale. The login still needs
-the password and the 2FA code, and it has a rate limit, but the page is exposed to the internet.
+Solo si hay que llegar a la app desde dispositivos que no pueden usar Tailscale. El ingreso sigue
+pidiendo la contraseña y el código 2FA, y tiene límite de intentos, pero la página queda expuesta
+a internet.
 
-1. Create a DNS `A` record (for example `gestionador.example.com`) pointing to the server's
-   public IP, and set it in `.env` as `SITE_ADDRESS`.
-2. Open ports 80 and 443 to the server (in the provider's firewall, if it has one).
-3. Start Caddy, which gets and renews the Let's Encrypt certificate on its own:
+1. Creá un registro DNS `A` (por ejemplo `gestionador.example.com`) que apunte a la IP pública
+   del servidor, y ponelo en `.env` como `SITE_ADDRESS`.
+2. Abrí los puertos 80 y 443 hacia el servidor (en el firewall del proveedor, si tiene uno).
+3. Arrancá Caddy, que obtiene y renueva solo el certificado de Let's Encrypt:
 
    ```bash
    docker compose --profile https up -d
    ```
 
-Caddy's configuration is [`Caddyfile`](../Caddyfile): HTTPS, HSTS and compression in front of the
-app.
+La configuración de Caddy está en [`Caddyfile`](../Caddyfile): HTTPS, HSTS y compresión delante de
+la app.
 
-## 5. Updates
+## 5. Actualizaciones
 
 ```bash
 cd /opt/gestionador-clientes
-docker compose run --rm backup          # a backup right before updating
+docker compose run --rm backup          # un backup justo antes de actualizar
 git pull
-docker compose up -d --build            # add --profile https when using Caddy
+docker compose up -d --build            # agregá --profile https si usás Caddy
 ```
 
-The `migrate` service applies new migrations before the app starts. If something goes wrong,
-`docker compose logs app migrate` shows why.
+El servicio `migrate` aplica las migraciones nuevas antes de que arranque la app. Si algo sale
+mal, `docker compose logs app migrate` muestra por qué.
 
-## 6. Day to day
+## 6. El día a día
 
-| Task | Command |
+| Tarea | Comando |
 |---|---|
-| See if everything is running | `docker compose ps` |
-| Logs of the app | `docker compose logs -f app` |
-| Restart | `docker compose restart app` |
-| Lost phone (new 2FA) | `docker compose run --rm migrate npm run user:reset-2fa -- <email>` |
-| Forgotten password | `docker compose run --rm migrate npm run user:set-password -- <email>` |
-| Backups and restore tests | [backups.md](backups.md) |
+| Ver si todo está corriendo | `docker compose ps` |
+| Logs de la app | `docker compose logs -f app` |
+| Reiniciar | `docker compose restart app` |
+| Celular perdido (2FA nuevo) | `docker compose run --rm migrate npm run user:reset-2fa -- <email>` |
+| Contraseña olvidada | `docker compose run --rm migrate npm run user:set-password -- <email>` |
+| Backups y pruebas de restauración | [backups.md](backups.md) |
