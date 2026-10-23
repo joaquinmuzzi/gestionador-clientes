@@ -11,6 +11,7 @@ import {
   type FieldSuggestion,
 } from "@/lib/devices/input";
 import type { DeviceSheet as SheetData, SheetField } from "@/lib/devices/queries";
+import type { DeviceAlerts } from "@/lib/devices/records";
 import { DEVICE_TYPE_LABELS, type DeviceType } from "@/lib/map/input";
 import {
   createField,
@@ -22,14 +23,12 @@ import {
   updateField,
 } from "./device-actions";
 import { AttachmentGallery } from "./attachment-gallery";
+import type { Save } from "./autosave";
+import { DeviceRecords } from "./device-records";
 
 // The device sheet, opened with a double click on the map. It lies over the
 // right side of the map so the diagram stays in view, and saves every change
 // through the map's autosave queue, in order.
-
-// Runs a Server Action after the changes already queued; resolves with its
-// result, or undefined when the request failed (the map shows the error).
-export type Save = <T extends { error?: string }>(run: () => Promise<T>) => Promise<T | undefined>;
 
 // A revealed secret hides itself again after this long.
 const REVEAL_MS = 30_000;
@@ -58,12 +57,14 @@ export function DeviceSheet({
   save,
   status,
   onClose,
+  onAlertsChange,
 }: {
   customerId: string;
   device: { id: string; name: string; type: DeviceType };
   save: Save;
   status: ReactNode;
   onClose: () => void;
+  onAlertsChange?: (alerts: DeviceAlerts) => void;
 }) {
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -131,7 +132,13 @@ export function DeviceSheet({
         ) : !sheet ? (
           <p className="text-sm text-neutral-500">Cargando…</p>
         ) : (
-          <SheetBody customerId={customerId} sheet={sheet} type={device.type} save={save} />
+          <SheetBody
+            customerId={customerId}
+            sheet={sheet}
+            type={device.type}
+            save={save}
+            onAlertsChange={onAlertsChange}
+          />
         )}
       </div>
     </section>
@@ -143,11 +150,13 @@ function SheetBody({
   sheet,
   type,
   save,
+  onAlertsChange,
 }: {
   customerId: string;
   sheet: SheetData;
   type: DeviceType;
   save: Save;
+  onAlertsChange?: (alerts: DeviceAlerts) => void;
 }) {
   const [fields, setFields] = useState<Field[]>(sheet.fields);
   // Which field takes the focus when it appears, and where.
@@ -240,6 +249,13 @@ function SheetBody({
       <AttachmentGallery customerId={customerId} deviceId={sheet.id} initial={sheet.attachments} />
 
       <DeviceTexts customerId={customerId} sheet={sheet} save={save} />
+
+      <DeviceRecords
+        customerId={customerId}
+        sheet={sheet}
+        save={save}
+        onAlertsChange={onAlertsChange}
+      />
     </div>
   );
 }

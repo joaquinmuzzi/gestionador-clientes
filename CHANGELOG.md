@@ -49,3 +49,10 @@ behaviour).
   the disk (`ATTACHMENTS_DIR`, an `attachments` volume in Docker Compose), are served only to a
   logged-in user and never cached, and every upload, view, rename and deletion is audited.
   Deleting a customer or a device also removes its encrypted files.
+- Incidents (day, what happened, how it was solved, open or resolved), known vulnerabilities
+  (severity, open or resolved) and an agenda of dated tasks on the device sheet, each opened in
+  place and saved automatically. A device with an open incident or an overdue task gets a red
+  mark on the map.
+- End users on the customer page: name, role, contact, technical level, what they may and may
+  not touch, how to deal with them, and whether they are a main contact. Saved automatically.
+- Every change to incidents, vulnerabilities, tasks and end users is audited.

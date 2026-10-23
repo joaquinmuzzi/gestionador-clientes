@@ -5,8 +5,10 @@ import { Suspense } from "react";
 import { getCustomerAttachments } from "@/lib/attachments/queries";
 import { requireUser } from "@/lib/auth/session";
 import { getCustomer } from "@/lib/customers/queries";
+import { getEndUsers } from "@/lib/end-users/queries";
 import { getCustomerMap } from "@/lib/map/queries";
 import { AttachmentGallery } from "./attachment-gallery";
+import { EndUsers } from "./end-users";
 import { MapEditor } from "./map-editor";
 
 export const metadata: Metadata = { title: "Cliente · Gestionador de Clientes" };
@@ -32,9 +34,10 @@ async function CustomerDetails({ id }: { id: string }) {
   await requireUser();
   const customer = await getCustomer(id);
   if (!customer) notFound();
-  const [map, attachments] = await Promise.all([
+  const [map, attachments, endUsers] = await Promise.all([
     getCustomerMap(customer.id),
     getCustomerAttachments(customer.id),
+    getEndUsers(customer.id),
   ]);
 
   return (
@@ -59,6 +62,10 @@ async function CustomerDetails({ id }: { id: string }) {
       >
         <MapEditor customerId={customer.id} map={map} />
       </section>
+
+      <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+        <EndUsers customerId={customer.id} initial={endUsers} />
+      </div>
 
       {/* Images of the customer as a whole (a diagram, a contract, a rack);
           each device's own are on its sheet. */}
