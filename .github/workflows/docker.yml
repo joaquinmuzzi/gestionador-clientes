@@ -1,0 +1,97 @@
+name: Docker
+
+# Builds the images with Docker Compose and tries them on every change to them: Postgres starts,
+# the migrations run and the app answers with its security headers, as on a real server.
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "prisma/**"
+      - "prisma.config.ts"
+      - ".github/workflows/docker.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "prisma/**"
+      - "prisma.config.ts"
+      - ".github/workflows/docker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Throwaway values for this run only
+      - name: Write the .env file
+        run: |
+          password=$(openssl rand -hex 16)
+          {
+            echo "POSTGRES_USER=gestionador"
+            echo "POSTGRES_PASSWORD=$password"
+            echo "POSTGRES_DB=gestionador"
+            echo "ENCRYPTION_KEY=$(openssl rand -base64 32)"
+          } > .env
+
+      - name: Build and start everything
+        run: docker compose up -d --build
+
+      - name: Check that the app answers
+        run: |
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:3000/login > /dev/null && break; sleep 2; done
+          curl -fs http://127.0.0.1:3000/login | grep -q "<title>Ingresar · Gestionador de Clientes</title>"
+          headers=$(curl -fsI http://127.0.0.1:3000/login)
+          printf '%s\n' "$headers"
+          printf '%s\n' "$headers" | grep -iq '^x-frame-options: DENY'
+          printf '%s\n' "$headers" | grep -iq '^x-content-type-options: nosniff'
+          # Without a session every page leads to the login
+          curl -fsI http://127.0.0.1:3000/ | grep -iq '^location: .*/login'
+
+      - name: Check that the migrations ran and the user CLI starts
+        run: |
+          docker compose run --rm migrate npx prisma migrate status
+          # Without an email it only prints its usage and fails, which is enough to know it runs
+          output=$(docker compose run --rm -T migrate npm run user:create 2>&1 || true)
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -q "Usage:"
+
+      - name: Report the image size
+        run: |
+          image=$(docker compose images app --format json | jq -r '.[0].Repository + ":" + .[0].Tag')
+          size=$(docker image inspect "$image" --format '{{.Size}}')
+          {
+            echo "### Image size"
+            echo "- Uncompressed: $((size / 1000000)) MB"
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
+
+      - name: Show the logs
+        if: always()
+        run: docker compose logs
+
+      - name: Stop everything
+        if: always()
+        run: docker compose down -v

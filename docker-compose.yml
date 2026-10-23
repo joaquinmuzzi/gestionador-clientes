@@ -1,6 +1,6 @@
-# Desarrollo: `docker compose up -d db` levanta solo Postgres.
-# Todo junto (app + migraciones + Postgres): `docker compose up -d --build`.
-# Los puertos quedan atados a 127.0.0.1: desde afuera de la máquina no se ven.
+# Development: `docker compose up -d db` starts only Postgres.
+# Everything (app + migrations + Postgres): `docker compose up -d --build`.
+# Ports are bound to 127.0.0.1: they cannot be reached from outside the machine.
 
 x-database-url: &database-url postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
 
@@ -9,9 +9,9 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
-      POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is missing from .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is missing from .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is missing from .env}
     volumes:
       - db-data:/var/lib/postgresql
     ports:
@@ -22,7 +22,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Aplica las migraciones pendientes y termina. También sirve para la CLI:
+  # Applies pending migrations and exits. It also runs the user CLI:
   # docker compose run --rm migrate npm run user:create -- <email>
   migrate:
     build:
@@ -30,7 +30,7 @@ services:
       target: tools
     environment:
       DATABASE_URL: *database-url
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Falta ENCRYPTION_KEY en .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is missing from .env}
     command: ["npx", "prisma", "migrate", "deploy"]
     depends_on:
       db:
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: *database-url
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Falta ENCRYPTION_KEY en .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is missing from .env}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

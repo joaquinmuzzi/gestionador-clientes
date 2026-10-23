@@ -1,0 +1,45 @@
+name: Bug report
+description: Something does not work (a page breaks, the login fails, something is saved wrong...).
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste real customer data, passwords or screenshots of real configurations here.**
+        Replace them with made-up values (`192.0.2.10`, `example.com`, `fake-password`).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the error message, if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in
+        2. Open a customer's map
+        3. Double-click a device
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: input
+    id: url
+    attributes:
+      label: Page or URL
+      description: The address where it happens, without the host (for example `/login`).
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: "Firefox 140 on Windows 11"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or server logs
+      description: Anything shown in the browser console (F12) or in `docker compose logs app`, without secrets.

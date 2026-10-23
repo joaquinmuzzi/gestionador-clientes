@@ -1,0 +1,10 @@
+# Store text files with LF line endings in the repository, whatever the contributor's settings
+* text=auto
+# Shell scripts always keep LF, or bash fails on macOS and Linux
+*.sh text eol=lf
+# Docker needs LF in these files
+Dockerfile text eol=lf
+# Binary assets
+*.ico binary
+*.png binary
+*.jpg binary

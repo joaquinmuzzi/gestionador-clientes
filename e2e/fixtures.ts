@@ -5,8 +5,8 @@ import { createUser } from "@/lib/auth/users";
 import { db } from "@/lib/db";
 
 // Fake data only: test user, 20-byte TOTP key, documentation IPs (192.0.2.x).
-export const TEST_USER = { email: "e2e@ejemplo.local", password: "clave-de-prueba-e2e" };
-const TEST_TOTP_KEY = new TextEncoder().encode("clave-totp-e2e-falsa");
+export const TEST_USER = { email: "e2e@example.test", password: "e2e-test-password" };
+const TEST_TOTP_KEY = new TextEncoder().encode("fake-e2e-totp-key-20");
 const TEST_IP_PREFIX = "192.0.2.";
 
 export function totpCode(offset = 0): string {
@@ -38,6 +38,7 @@ export const test = base.extend<{ resetUser: void }>({
 
 export { expect } from "@playwright/test";
 
+// The labels are the Spanish interface text.
 export async function login(
   page: Page,
   { email = TEST_USER.email, password = TEST_USER.password, code = totpCode() } = {},

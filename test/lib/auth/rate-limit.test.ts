@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientIp } from "./rate-limit";
+import { clientIp } from "@/lib/auth/rate-limit";
 
 describe("clientIp", () => {
   it("takes the address added by the closest proxy", () => {

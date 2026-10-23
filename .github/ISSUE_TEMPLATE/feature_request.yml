@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for Gestionador de Clientes.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: The problem or the use case, rather than the solution.
+      placeholder: "When a customer calls about the VPN I want to see at once which firewall it goes through..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How could the app help?
+      description: Keep it simple; the app should stay a few screens and a few clicks.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have considered
