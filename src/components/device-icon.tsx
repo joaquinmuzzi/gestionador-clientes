@@ -78,3 +78,23 @@ export function DeviceIcon({ type, className }: { type: DeviceType; className?: 
     </svg>
   );
 }
+
+// Each family of devices gets its own colour, as icons do in an administration
+// console: network gear teal, servers and storage indigo, the firewall red,
+// end-user equipment and the rest grey.
+const TINTS: Record<DeviceType, { background: string; ink: string }> = {
+  ROUTER: { background: "#e1f0ef", ink: "#0a5f64" },
+  SWITCH: { background: "#e1f0ef", ink: "#0a5f64" },
+  ACCESS_POINT: { background: "#e1f0ef", ink: "#0a5f64" },
+  SERVER: { background: "#e9edf7", ink: "#3949ab" },
+  NAS: { background: "#e9edf7", ink: "#3949ab" },
+  FIREWALL: { background: "#fdecea", ink: "#b42318" },
+  CLOUD: { background: "#e8f1fb", ink: "#2563a8" },
+  PC: { background: "#eef0f3", ink: "#374151" },
+  PRINTER: { background: "#eef0f3", ink: "#374151" },
+  OTHER: { background: "#eef0f3", ink: "#374151" },
+};
+
+export function deviceTint(type: DeviceType): { background: string; ink: string } {
+  return TINTS[type];
+}

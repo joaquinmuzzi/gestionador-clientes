@@ -16,8 +16,7 @@ const deviceRef = {
   },
 } as const;
 
-// The home page: every customer as a card (with a thumbnail of its map),
-// what is pending and the latest changes.
+// The home page: every customer as a row, what is pending and the latest changes.
 export async function getDashboard(search: string) {
   const term = collapseSpaces(search).slice(0, SEARCH_MAX_LENGTH);
   const [
@@ -42,7 +41,7 @@ export async function getDashboard(search: string) {
         name: true,
         notes: true,
         updatedAt: true,
-        devices: { select: { positionX: true, positionY: true, type: true } },
+        _count: { select: { devices: true } },
       },
     }),
     db.customer.count(),
@@ -90,11 +89,10 @@ export async function getDashboard(search: string) {
       openVulnerabilities,
       urgentVulnerabilities,
     },
-    customers: customers.map(({ devices, ...customer }) => ({
+    customers: customers.map(({ _count, ...customer }) => ({
       ...customer,
-      deviceCount: devices.length,
+      deviceCount: _count.devices,
       openIncidents: openByCustomer.get(customer.id) ?? 0,
-      thumbnail: thumbnail(devices),
     })),
     upcoming: upcoming.map(({ dueAt, ...item }) => ({ ...item, dueAt: toDay(dueAt) })),
     incidents: incidents.map(({ occurredAt, ...incident }) => ({
@@ -103,25 +101,6 @@ export async function getDashboard(search: string) {
     })),
     activity,
   };
-}
-
-// Where each device sits on the map, as percentages of a small box, so the
-// card shows the shape of the customer's network. Capped, to keep the page light.
-const THUMBNAIL_MAX = 40;
-
-function thumbnail(devices: { positionX: number; positionY: number; type: string }[]) {
-  const shown = devices.slice(0, THUMBNAIL_MAX);
-  if (shown.length === 0) return [];
-  const xs = shown.map((device) => device.positionX);
-  const ys = shown.map((device) => device.positionY);
-  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const scale = (value: number, min: number, max: number) =>
-    max === min ? 50 : 15 + ((value - min) / (max - min)) * 70;
-  return shown.map((device) => ({
-    x: scale(device.positionX, minX, maxX),
-    y: scale(device.positionY, minY, maxY),
-    type: device.type,
-  }));
 }
 
 export type Dashboard = Awaited<ReturnType<typeof getDashboard>>;

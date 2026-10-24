@@ -22,6 +22,12 @@ cuidar.
 Una regla para toda la app: **no hay botón de guardar**. Cada cambio se guarda solo cuando salís
 del campo, y arriba a la derecha aparece **Guardado**.
 
+La app se ve como un programa de administración: arriba el menú y la barra de herramientas (con
+**Nuevo cliente** y el cuadro de búsqueda), a la izquierda el árbol con todos los clientes y,
+abajo, una barra con atajos. En el árbol, un click en un cliente abre su mapa y despliega sus
+dispositivos; un click en un dispositivo abre su ficha. El punto al lado de cada cliente se pone
+naranja cuando tiene incidentes abiertos.
+
 ## 1. Entrar
 
 <img src="images/user-guide/01-login.png" alt="Pantalla de ingreso con email, contraseña y código" width="420">
@@ -40,12 +46,12 @@ Si fallás varias veces seguidas, la app te frena unos minutos: esperá y volvé
 
 ![Pantalla de inicio con los clientes](images/user-guide/02-clientes.png)
 
-La pantalla de inicio muestra los totales, una tarjeta por cliente (con un dibujito de su mapa) y,
-al costado, las próximas tareas, los incidentes abiertos y los últimos cambios. El cuadro
-**Filtrar por nombre…** filtra las tarjetas. **Incidentes y agenda**, arriba, junta las tareas de
+La pantalla de inicio muestra los totales, la lista de clientes (un renglón por cliente, con sus
+notas, cuántos dispositivos tiene y si tiene incidentes abiertos) y, debajo, las próximas tareas,
+los incidentes abiertos y los últimos cambios. El cuadro **Filtrar por nombre…** filtra la lista. **Incidentes y agenda**, arriba, junta las tareas de
 la semana y los incidentes de todos los clientes; cada renglón abre la ficha del dispositivo.
 
-1. Tocá **Nuevo cliente**.
+1. Tocá **Nuevo cliente**, en la barra de herramientas.
 2. Poné el nombre y, si querés, notas: dirección, horarios, cómo se trabaja con ellos.
 3. Tocá **Crear cliente**. Se abre la página del cliente, con su mapa vacío.
 
@@ -89,18 +95,21 @@ aparece marcado en naranja, para que se vea de un vistazo qué necesita atenció
 
 ![Ficha de un dispositivo](images/user-guide/07-ficha-campos.png)
 
-**Doble click** en un dispositivo abre su ficha a la derecha. Se cierra con la ✕ o con Escape.
+**Doble click** en un dispositivo (o un click en él en el árbol de la izquierda) abre su ficha en
+la parte de abajo del mapa, como un panel de propiedades. Se cierra con la ✕ o con Escape.
 
-En **Campos** no hay nada obligatorio ni fijo: cada campo tiene un nombre y un valor, y se pueden
-agregar todos los que hagan falta.
+En **Campos** no hay nada obligatorio ni fijo: cada campo es un renglón con el nombre a la
+izquierda y el valor a la derecha, y se pueden agregar todos los que hagan falta. Para cambiarle
+el nombre a un campo, hacé click en el nombre.
 
 - **Agregar campo** crea uno vacío. Los botones con **+** (por ejemplo "+ IP" o "+ Máscara") son
   sugerencias según el tipo de dispositivo: un click y el campo aparece con el nombre puesto.
 - El valor puede tener varias líneas, para pegar una configuración o una lista.
 - Las flechas ↑ ↓ cambian el orden y la ✕ roja borra el campo.
 
-Más abajo en la ficha están **Funciones (quién hace qué)**, por ejemplo "DHCP y DNS de la
-oficina, lo administra el proveedor", y **Notas** para todo lo demás.
+A la derecha de los campos (o debajo, si la pantalla es angosta) están **Capturas**,
+**Funciones (quién hace qué)**, por ejemplo "DHCP y DNS de la oficina, lo administra el
+proveedor", y **Notas** para todo lo demás.
 
 ## 5. Guardar una contraseña
 
@@ -134,7 +143,7 @@ Se aceptan PNG, JPG y WebP de hasta 10 MB. Las imágenes también se guardan cif
 
 ![Incidentes, vulnerabilidades y agenda en la ficha](images/user-guide/08-ficha-incidentes-agenda.png)
 
-Al final de la ficha de cada dispositivo hay tres listas:
+Debajo de los campos de cada dispositivo hay tres listas:
 
 - **Incidentes:** qué pasó, cuándo y cómo se resolvió. Mientras no está marcado como resuelto,
   el dispositivo aparece marcado en el mapa.
@@ -149,7 +158,7 @@ Cada lista tiene su botón **Agregar…**. Un click en un renglón lo abre para 
 
 ![Usuarios finales de un cliente](images/user-guide/09-usuarios-finales.png)
 
-Al costado del mapa (o debajo, en pantallas chicas) está **Usuarios finales**: las personas del cliente con las que tratás. Tocá
+Debajo del mapa está **Usuarios finales**: las personas del cliente con las que tratás. Tocá
 **Agregar persona** y completá lo que sirva: puesto, nivel técnico, contacto, **qué puede y qué
 no puede tocar** y **cómo tratarlo**. Una de ellas se puede marcar como **contacto principal**.
 
@@ -157,7 +166,7 @@ no puede tocar** y **cómo tratarlo**. Una de ellas se puede marcar como **conta
 
 ![Resultados de una búsqueda](images/user-guide/10-busqueda.png)
 
-El cuadro de búsqueda de arriba busca en todos los clientes a la vez: nombres de clientes y de
+El cuadro de búsqueda de la barra de herramientas busca en todos los clientes a la vez: nombres de clientes y de
 dispositivos, IPs, valores de campos, notas, incidentes, tareas y personas. **Ctrl+K** lleva el
 cursor directo al cuadro.
 

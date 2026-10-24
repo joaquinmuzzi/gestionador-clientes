@@ -17,7 +17,7 @@ export function WeekAgenda({ tasks }: { tasks: AgendaTask[] }) {
 
   if (!today) {
     return (
-      <section className="rounded-xl border border-neutral-200 bg-white px-5 py-4">
+      <section className="rounded-sm border border-neutral-300 bg-white px-3.5 py-3">
         <p className="text-sm text-neutral-600">Cargando la semana…</p>
       </section>
     );
@@ -29,10 +29,10 @@ export function WeekAgenda({ tasks }: { tasks: AgendaTask[] }) {
   return (
     <section
       aria-labelledby="agenda-week"
-      className="rounded-xl border border-neutral-200 bg-white px-5 py-4"
+      className="rounded-sm border border-neutral-300 bg-white px-3.5 py-3"
     >
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
-        <h2 id="agenda-week" className="text-lg font-semibold">
+        <h2 id="agenda-week" className="font-semibold">
           Semana del {formatDay(days[0]).slice(0, 5)} al {formatDay(days[6]).slice(0, 5)}
         </h2>
         <div className="flex gap-1.5">

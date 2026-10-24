@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Editar cliente · Gestionador de Cli
 
 export default function EditCustomerPage({ params }: PageProps<"/customers/[id]/edit">) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-2xl">
       <Suspense fallback={<p className="text-neutral-500">Cargando…</p>}>
         {params.then(({ id }) => (
           <EditCustomer id={id} />
@@ -33,7 +33,7 @@ async function EditCustomer({ id }: { id: string }) {
       <Link href={customerHref} className="text-sm text-neutral-600 hover:text-neutral-900">
         ← {customer.name}
       </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-semibold">Editar cliente</h1>
+      <h1 className="mt-2 mb-6 text-lg font-semibold">Editar cliente</h1>
       <CustomerForm
         action={updateCustomer.bind(null, customer.id)}
         initial={{ name: customer.name, notes: customer.notes }}

@@ -93,7 +93,8 @@ Where things go:
 | Autosave queue, save status, editing one record in place | `src/app/(app)/customers/[id]/autosave.tsx` |
 | Attachments (upload, gallery, serving the decrypted image) | `src/app/(app)/customers/[id]/attachment-*.ts(x)`, `src/app/(app)/customers/[id]/attachments/`, `src/lib/attachments/` |
 | Home page and "Incidentes y agenda" | `src/app/(app)/page.tsx`, `src/app/(app)/agenda/`, `src/lib/dashboard/` |
-| Look and feel (fonts, colours, the navy header) | `src/app/globals.css` (Tailwind theme), `src/app/layout.tsx`, `src/app/(app)/layout.tsx` |
+| Look and feel (fonts, colours, menu bar, toolbar, status bar) | `src/app/globals.css` (Tailwind theme), `src/app/layout.tsx`, `src/app/(app)/layout.tsx` |
+| The tree of customers and devices on the left | `src/app/(app)/explorer.tsx`, `src/app/(app)/explorer/route.ts`, `getExplorerTree` in `src/lib/customers/queries.ts` |
 | Global search (header box, results page, what is searched) | `src/app/(app)/search-box.tsx`, `src/app/(app)/search/`, `src/lib/search/` |
 | Device icons | `src/components/device-icon.tsx` |
 | Encrypting a secret or a file | `encrypt`/`decrypt` in `src/lib/crypto.ts`, never a new cipher |
@@ -288,9 +289,15 @@ msinfo32), importing draw.io diagrams, version history of passwords.
 
 ## 9. UI and user experience
 
-- The look follows the mock-up shown to Gabriel (IBM Plex, cool greys, a navy header, one blue
-  accent). Its colours are Tailwind theme tokens in `src/app/globals.css` (`accent`, `warn`,
-  `navy`, and a redefined `neutral` scale): use them, not raw hex values or other palettes.
+- The look is option D of the interface proposals ("Administrador clásico", chosen by Joaquín on
+  2026-10-24): a Windows administration console. Light grey chrome (`chrome`), white panes, square
+  corners (the radius tokens are redefined, so `rounded-lg` is 3px), one teal `accent`, pale blue
+  `select` for what is selected, `tunnel` for VPNs and a colour per device family
+  (`deviceTint` in `src/components/device-icon.tsx`). The tokens live in `src/app/globals.css`:
+  use them, not raw hex values or other palettes.
+- The tree on the left lives in the layout, which does not render again on navigation, so it
+  fetches `/explorer` itself on every page change and when the autosave reports a change. Its
+  items have the `treeitem` role, so page-level `getByRole("link")` in tests does not see them.
 - Tailwind utility classes; React 19 function components. Server Components by default, client
   components only where there is interaction.
 - Interface text in Spanish (section 6). Show loading and error states the way the login form

@@ -5,43 +5,20 @@ import { SEARCH_MAX_LENGTH } from "@/lib/customers/queries";
 import {
   activitySummary,
   describeActivity,
-  initials,
   timeAgo,
-  tintFor,
 } from "@/lib/dashboard/display";
 import { getDashboard, type Dashboard } from "@/lib/dashboard/queries";
 import { formatDay } from "@/lib/devices/records";
 import { DueDay } from "./due-day";
 
-const cardClass = "rounded-xl border border-neutral-200 bg-white";
+const cardClass = "rounded-sm border border-neutral-300 bg-white";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <div className="mx-auto flex max-w-[88rem] flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Inicio</h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            Todos los clientes y lo que tenés pendiente con ellos.
-          </p>
-        </div>
-        <Link
-          href="/customers/new"
-          className="flex h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent-strong"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            aria-hidden="true"
-            className="size-4"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Nuevo cliente
-        </Link>
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-lg font-semibold">Inicio</h1>
+        <p className="text-neutral-600">Todos los clientes y lo que tenés pendiente con ellos.</p>
       </div>
       <Suspense fallback={<p className="text-neutral-500">Cargando…</p>}>
         {searchParams.then(({ q }) => (
@@ -61,7 +38,7 @@ async function DashboardView({ search }: { search: string }) {
 
   return (
     <>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-3.5 pt-2">
         <Stat
           label="Clientes"
           value={totals.customers}
@@ -102,10 +79,9 @@ async function DashboardView({ search }: { search: string }) {
         />
       </div>
 
-      <div className="flex flex-wrap items-start gap-6">
-        <CustomerCards dashboard={dashboard} search={search} />
+      <CustomerList dashboard={dashboard} search={search} />
 
-        <aside className="flex min-w-0 flex-[1_1_20rem] flex-col gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] items-start gap-4">
           <SidePanel title="Agenda próxima" id="home-agenda">
             {dashboard.upcoming.length === 0 ? (
               <Empty>No hay tareas pendientes.</Empty>
@@ -154,8 +130,8 @@ async function DashboardView({ search }: { search: string }) {
             )}
           </SidePanel>
 
-          <section aria-labelledby="home-activity" className={`${cardClass} px-5 py-4`}>
-            <h2 id="home-activity" className="text-base font-semibold">
+          <section aria-labelledby="home-activity" className={`${cardClass} px-3.5 py-2.5`}>
+            <h2 id="home-activity" className="font-semibold">
               Actividad reciente
             </h2>
             {dashboard.activity.length === 0 ? (
@@ -180,18 +156,20 @@ async function DashboardView({ search }: { search: string }) {
               </ul>
             )}
           </section>
-        </aside>
       </div>
     </>
   );
 }
 
-function CustomerCards({ dashboard, search }: { dashboard: Dashboard; search: string }) {
+// The customers as the details view of a file explorer: one row per customer,
+// the whole row a link to its map.
+function CustomerList({ dashboard, search }: { dashboard: Dashboard; search: string }) {
   const { customers } = dashboard;
+  const columns = "grid grid-cols-[minmax(12rem,2fr)_minmax(0,2fr)_8rem_10rem] gap-x-3";
   return (
-    <section aria-labelledby="home-customers" className="min-w-0 flex-[999_1_36rem]">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="home-customers" className="text-lg font-semibold">
+    <section aria-labelledby="home-customers" className="min-w-0">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="home-customers" className="font-semibold">
           Clientes
         </h2>
         <form role="search" action="/" className="w-full max-w-xs">
@@ -202,7 +180,7 @@ function CustomerCards({ dashboard, search }: { dashboard: Dashboard; search: st
             maxLength={SEARCH_MAX_LENGTH}
             placeholder="Filtrar por nombre…"
             aria-label="Buscar clientes"
-            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+            className="h-7 w-full rounded-sm border border-neutral-300 bg-white px-2 text-[13px] focus:border-select-line focus:ring-1 focus:ring-select-line focus:outline-none"
           />
         </form>
       </div>
@@ -212,72 +190,52 @@ function CustomerCards({ dashboard, search }: { dashboard: Dashboard; search: st
           {search ? "Ningún cliente coincide con la búsqueda." : "Todavía no hay clientes cargados."}
         </p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))] gap-3.5">
-          {customers.map((customer) => {
-            const tint = tintFor(customer.id);
-            return (
-              <li key={customer.id}>
-                <Link
-                  href={`/customers/${customer.id}`}
-                  className={`${cardClass} flex h-full flex-col gap-3 p-4 hover:border-accent-line hover:shadow-sm`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      style={{ background: tint.background, color: tint.ink }}
-                      className="flex size-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold"
-                    >
-                      {initials(customer.name)}
+        <div className="overflow-x-auto rounded-sm border border-neutral-300">
+          <div className="min-w-[44rem]">
+            <div
+              aria-hidden="true"
+              className={`${columns} border-b border-neutral-300 bg-neutral-50 px-2.5 py-1 text-xs text-neutral-600`}
+            >
+              <span>Nombre ▴</span>
+              <span>Notas</span>
+              <span>Dispositivos</span>
+              <span>Estado</span>
+            </div>
+            <ul>
+              {customers.map((customer) => (
+                <li key={customer.id} className="border-b border-neutral-100 last:border-b-0">
+                  <Link
+                    href={`/customers/${customer.id}`}
+                    className={`${columns} items-center px-2.5 py-1 hover:bg-select`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className={`size-[7px] shrink-0 rounded-full ${customer.openIncidents > 0 ? "bg-warn" : "bg-[#2e9e5b]"}`}
+                      />
+                      <span className="truncate font-semibold">{customer.name}</span>
                     </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold">{customer.name}</span>
-                      {customer.notes && (
-                        <span className="block truncate text-[13px] text-neutral-600">
-                          {customer.notes.split("\n", 1)[0]}
-                        </span>
-                      )}
+                    <span className="truncate text-neutral-600">
+                      {customer.notes?.split("\n", 1)[0]}
                     </span>
-                  </span>
-
-                  <MapThumbnail points={customer.thumbnail} />
-
-                  <span className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-neutral-600">
-                    <span>{deviceCount(customer.deviceCount)}</span>
+                    <span className="tabular-nums">{deviceCount(customer.deviceCount)}</span>
                     {customer.openIncidents > 0 ? (
-                      <span className="rounded-full bg-warn-soft px-2 py-0.5 text-xs font-medium text-warn-ink">
+                      <span className="text-warn-ink">
                         {plural(customer.openIncidents, "incidente abierto", "incidentes abiertos")}
                       </span>
                     ) : customer.deviceCount > 0 ? (
-                      <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-ink">
-                        Al día
-                      </span>
-                    ) : null}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                      <span className="text-neutral-700">✓ Al día</span>
+                    ) : (
+                      <span className="text-neutral-500">—</span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
     </section>
-  );
-}
-
-// The shape of the customer's map, one dot per device, as a hint of its size.
-function MapThumbnail({ points }: { points: Dashboard["customers"][number]["thumbnail"] }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="relative block h-16 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-50 bg-[radial-gradient(#dce0e6_1px,transparent_1px)] bg-[size:10px_10px]"
-    >
-      {points.map((point, index) => (
-        <span
-          key={index}
-          style={{ left: `${point.x}%`, top: `${point.y}%` }}
-          className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-[3px] bg-accent/70"
-        />
-      ))}
-    </span>
   );
 }
 
@@ -293,22 +251,25 @@ function Stat({
   warn?: boolean;
 }) {
   return (
-    <div className={`${cardClass} px-5 py-4`}>
-      <p className="text-[13px] text-neutral-600">{label}</p>
-      <p className={`mt-1 text-3xl font-semibold ${warn ? "text-warn-ink" : ""}`}>{value}</p>
-      <p className="mt-0.5 text-[13px] text-neutral-600">{detail}</p>
+    // A group box: the label sits on the border, as in a Windows dialog.
+    <div className="relative rounded-sm border border-neutral-300 px-3.5 pt-3 pb-2.5">
+      <p className="absolute -top-2.5 left-2.5 bg-white px-1.5 text-xs text-neutral-600">{label}</p>
+      <p className={`text-[26px] leading-tight font-semibold ${warn ? "text-warn-ink" : ""}`}>
+        {value}
+      </p>
+      <p className="text-[13px] text-neutral-600">{detail}</p>
     </div>
   );
 }
 
 function SidePanel({ title, id, children }: { title: string; id: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className={`${cardClass} px-5 py-4`}>
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <h2 id={id} className="text-base font-semibold">
+    <section aria-labelledby={id} className={`${cardClass} px-3.5 py-2.5`}>
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <h2 id={id} className="font-semibold">
           {title}
         </h2>
-        <Link href="/agenda" className="text-[13px] text-accent hover:text-accent-strong">
+        <Link href="/agenda" className="text-[13px] text-link underline">
           Ver todo
         </Link>
       </div>
@@ -330,7 +291,7 @@ function DeviceLink({
   return (
     <Link
       href={`/customers/${device.customer.id}?device=${device.id}`}
-      className={`${className} rounded-md hover:bg-neutral-50`}
+      className={`${className} rounded-sm hover:bg-select`}
     >
       {children}
     </Link>

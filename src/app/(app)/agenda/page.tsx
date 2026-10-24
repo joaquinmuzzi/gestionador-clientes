@@ -21,7 +21,7 @@ export default function AgendaPage({ searchParams }: PageProps<"/agenda">) {
   return (
     <div className="mx-auto flex max-w-[88rem] flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Incidentes y agenda</h1>
+        <h1 className="text-lg font-semibold">Incidentes y agenda</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Todo lo pendiente de todos los clientes. Para cargar o cambiar algo, abrí la ficha del
           dispositivo.
@@ -48,13 +48,13 @@ async function Overview({ filter }: { filter: (typeof FILTERS)[number] }) {
 
       <section
         aria-labelledby="agenda-incidents"
-        className="overflow-hidden rounded-xl border border-neutral-200 bg-white"
+        className="overflow-hidden rounded-sm border border-neutral-300 bg-white"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4">
-          <h2 id="agenda-incidents" className="text-lg font-semibold">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50 px-3.5 py-2">
+          <h2 id="agenda-incidents" className="font-semibold">
             Incidentes
           </h2>
-          <nav aria-label="Filtrar incidentes" className="flex gap-1.5">
+          <nav aria-label="Filtrar incidentes" className="flex">
             {FILTERS.map((option) => {
               const current = option.param === filter.param;
               return (
@@ -63,9 +63,9 @@ async function Overview({ filter }: { filter: (typeof FILTERS)[number] }) {
                   href={`/agenda?estado=${option.param}`}
                   aria-current={current ? "page" : undefined}
                   className={
-                    "rounded-full border px-3.5 py-1.5 text-[13px] " +
+                    "-ml-px border px-3 py-0.5 text-[13px] first:ml-0 first:rounded-l-sm last:rounded-r-sm " +
                     (current
-                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      ? "relative border-select-line bg-select text-neutral-900"
                       : "border-neutral-300 bg-white hover:bg-neutral-100")
                   }
                 >
