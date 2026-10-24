@@ -13,7 +13,7 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
-import { DeviceIcon } from "@/components/device-icon";
+import { DeviceIcon, deviceTint } from "@/components/device-icon";
 import { attentionReasons, type DeviceAlerts } from "@/lib/devices/records";
 import { isTunnel, type DeviceType } from "@/lib/map/input";
 import { useToday } from "./device-records";
@@ -37,20 +37,23 @@ const HANDLES = [
 
 export function DeviceNodeView({ data, selected }: NodeProps<DeviceNode>) {
   const reasons = attentionReasons(data.alerts, useToday());
-  const tile = selected
-    ? "border-2 border-accent bg-accent-soft ring-4 ring-accent/20"
-    : reasons.length > 0
-      ? "border border-warn-line bg-warn-soft"
-      : "border border-neutral-300 bg-white";
+  const tint = deviceTint(data.type);
+  // Selected as in Explorer's icon view: the whole item, icon and name, in pale blue.
   return (
-    <div className="group relative flex w-32 flex-col items-center gap-1.5 text-center">
+    <div
+      className={
+        "group relative flex w-32 flex-col items-center gap-1 rounded-sm border px-1 py-1 text-center " +
+        (selected ? "border-select-line bg-select" : "border-transparent")
+      }
+    >
       <span
-        className={`relative flex size-14 items-center justify-center rounded-xl shadow-sm ${tile}`}
+        style={{ background: tint.background, color: tint.ink }}
+        className={
+          "relative flex size-12 items-center justify-center rounded-sm " +
+          (reasons.length > 0 ? "ring-2 ring-warn-line" : "")
+        }
       >
-        <DeviceIcon
-          type={data.type}
-          className={`size-8 ${reasons.length > 0 && !selected ? "text-warn-ink" : "text-accent-ink"}`}
-        />
+        <DeviceIcon type={data.type} className="size-7" />
         {/* Open incidents or overdue tasks, seen without opening the sheet. */}
         {reasons.length > 0 && (
           <span
@@ -61,11 +64,21 @@ export function DeviceNodeView({ data, selected }: NodeProps<DeviceNode>) {
           />
         )}
       </span>
-      <span className="max-w-full rounded bg-[#fbfbfc] px-1 text-[13px] leading-tight font-semibold break-words text-neutral-900">
+      <span
+        className={
+          "max-w-full px-1 text-[13px] leading-tight break-words text-neutral-900 " +
+          (selected ? "" : "bg-white")
+        }
+      >
         {data.name}
       </span>
       {data.address && (
-        <span className="max-w-full truncate rounded bg-[#fbfbfc] px-1 font-mono text-[11px] leading-tight text-neutral-600">
+        <span
+          className={
+            "max-w-full truncate px-1 font-mono text-[11px] leading-tight text-neutral-600 " +
+            (selected ? "" : "bg-white")
+          }
+        >
           {data.address}
         </span>
       )}
@@ -76,7 +89,7 @@ export function DeviceNodeView({ data, selected }: NodeProps<DeviceNode>) {
           type="source"
           position={handle.position}
           className={
-            "size-3! border-2! border-white! bg-accent! transition-opacity " +
+            "size-3! rounded-none! border-2! border-white! bg-accent! transition-opacity " +
             (selected ? "opacity-100" : "opacity-0 group-hover:opacity-100")
           }
         />
@@ -87,7 +100,7 @@ export function DeviceNodeView({ data, selected }: NodeProps<DeviceNode>) {
 
 // About half the icon tile: a device's box is wider than its icon because of
 // the name, and an edge should reach the icon.
-const EDGE_HALF_WIDTH = 36;
+const EDGE_HALF_WIDTH = 30;
 
 // Where the line from the centre of `node` towards the centre of `other`
 // crosses the border of `node`, so edges meet devices from any side. Sideways
@@ -133,8 +146,8 @@ export function ConnectionEdgeView({
         id={id}
         path={path}
         style={{
-          stroke: selected ? "#14171f" : tunnel ? "#2457d6" : "#9aa3b0",
-          strokeWidth: selected ? 2.5 : 2,
+          stroke: selected ? "#1f2328" : tunnel ? "#2563a8" : "#8a939e",
+          strokeWidth: selected ? 2.2 : 1.5,
           strokeDasharray: tunnel ? "6 4" : undefined,
         }}
       />
@@ -143,10 +156,10 @@ export function ConnectionEdgeView({
           <div
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
             className={
-              "nodrag nopan pointer-events-none absolute max-w-40 truncate rounded-md border " +
+              "nodrag nopan pointer-events-none absolute max-w-40 truncate rounded-sm border " +
               "px-1.5 py-0.5 text-[11px] " +
               (tunnel
-                ? "border-accent-soft bg-accent-soft font-medium text-accent-ink"
+                ? "border-tunnel-line bg-tunnel-soft text-tunnel-ink"
                 : "border-neutral-200 bg-white text-neutral-700") +
               (selected ? " border-neutral-900!" : "")
             }

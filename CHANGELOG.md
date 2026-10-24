@@ -80,5 +80,11 @@ behaviour).
 
 ### Changed
 
+- The interface looks like a Windows administration console (option D of the proposals): Source
+  Sans 3 fonts, light grey chrome with square corners and a teal accent, a menu bar and a toolbar
+  with "Nuevo cliente" and the search, a tree on the left with every customer and the devices of
+  the open one, and a status bar. The home page lists the customers as rows instead of cards, the
+  map takes the whole width with a colour per device family, and the device sheet docks at the
+  bottom of the map with its fields as a property grid.
 - The server documents (`docs/deployment.md`, `docs/backups.md`) are now in Spanish, like the rest
   of `docs/`, and refer to "el usuario" instead of a named person.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { EXPLORER_REFRESH_EVENT } from "../../explorer";
 
 // Autosave shared by the map editor (with its device sheet) and the end users
 // of the customer page.
@@ -24,6 +25,8 @@ export function useAutosave() {
     const done = queue.current.then(run).then(
       (result) => {
         if (result.error) setError(result.error);
+        // The tree on the left lists the devices by name.
+        else window.dispatchEvent(new Event(EXPLORER_REFRESH_EVENT));
         return result;
       },
       () => {

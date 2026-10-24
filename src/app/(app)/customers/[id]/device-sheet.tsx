@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { DeviceIcon } from "@/components/device-icon";
+import { DeviceIcon, deviceTint } from "@/components/device-icon";
 import { collapseSpaces } from "@/lib/customers/input";
 import {
   DEVICE_TEXT_MAX_LENGTH,
@@ -26,8 +26,9 @@ import { AttachmentGallery } from "./attachment-gallery";
 import type { Save } from "./autosave";
 import { DeviceRecords } from "./device-records";
 
-// The device sheet, opened with a double click on the map. It lies over the
-// right side of the map so the diagram stays in view, and saves every change
+// The device sheet, opened with a double click on the map. It docks at the
+// bottom of the map, like the properties pane of a console, so the upper part
+// of the diagram stays in view, and saves every change
 // through the map's autosave queue, in order.
 
 // A revealed secret hides itself again after this long.
@@ -35,11 +36,16 @@ const REVEAL_MS = 30_000;
 const COPIED_MS = 2_000;
 
 const inputClass =
-  "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+  "w-full rounded-sm border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 " +
+  "focus:border-select-line focus:outline-none focus:ring-1 focus:ring-select-line";
+// The field's name reads as the grid's label until it is clicked.
+const nameClass =
+  "w-full rounded-sm border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-700 " +
+  "hover:border-neutral-300 focus:border-select-line focus:bg-white focus:outline-none " +
+  "focus:ring-1 focus:ring-select-line";
 const smallButtonClass =
-  "rounded-md border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700 hover:bg-neutral-100 " +
-  "disabled:opacity-40";
+  "rounded-sm border border-neutral-300 bg-white px-1.5 py-0.5 text-xs text-neutral-700 " +
+  "hover:border-select-line hover:bg-select disabled:opacity-40";
 
 type Field = SheetField & {
   // Not on the server yet: a field without a name is not saved.
@@ -103,17 +109,20 @@ export function DeviceSheet({
     <section
       role="dialog"
       aria-labelledby={titleId}
-      className="absolute inset-y-0 right-0 z-10 flex w-full max-w-lg flex-col border-l border-neutral-200 bg-neutral-50 shadow-xl"
+      className="absolute inset-x-0 bottom-0 z-10 flex h-[62%] min-h-80 flex-col border-t-4 border-chrome bg-white shadow-[0_-2px_6px_rgb(0_0_0/0.08)]"
     >
-      <header className="flex items-start gap-3 border-b border-neutral-200 bg-white p-4">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-accent-line/60 bg-accent-soft">
-          <DeviceIcon type={device.type} className="size-7 text-accent-ink" />
+      <header className="flex items-center gap-3 border-b border-neutral-300 bg-chrome-light px-3 py-2">
+        <span
+          style={{ background: deviceTint(device.type).background, color: deviceTint(device.type).ink }}
+          className="flex size-9 shrink-0 items-center justify-center rounded-sm"
+        >
+          <DeviceIcon type={device.type} className="size-6" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 id={titleId} className="text-xl leading-tight font-semibold break-words">
+          <h2 id={titleId} className="text-base leading-tight font-semibold break-words">
             {device.name}
           </h2>
-          <p className="text-sm text-neutral-600">
+          <p className="text-[13px] text-neutral-600">
             {DEVICE_TYPE_LABELS[device.type]}
             {device.address && (
               <>
@@ -129,14 +138,14 @@ export function DeviceSheet({
             type="button"
             onClick={onClose}
             aria-label="Cerrar ficha"
-            className="rounded-md px-2 py-1 text-lg leading-none text-neutral-600 hover:bg-neutral-100"
+            className="rounded-sm px-2 py-0.5 text-lg leading-none text-neutral-600 hover:bg-select"
           >
             ×
           </button>
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-neutral-50 p-3">
         {loadError ? (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {loadError}
@@ -225,73 +234,78 @@ function SheetBody({
   const suggestions = remainingSuggestions(type, fields.map((field) => field.name));
 
   return (
-    <div className="flex flex-col gap-4">
-      <section aria-labelledby="sheet-fields" className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
-        <div>
-          <h3 id="sheet-fields" className="text-base font-semibold text-neutral-900">
-            Campos
-          </h3>
-          <p className="text-sm text-neutral-600">Libres, sin formato fijo. Agregá los que necesites.</p>
-        </div>
-        {fields.length === 0 && (
-          <p className="text-sm text-neutral-500">
-            Todavía no tiene campos. Agregá los que necesites: no hay ninguno obligatorio.
-          </p>
-        )}
-        <ol className="flex flex-col gap-3">
-          {fields.map((field, index) => (
-            <FieldRow
-              key={field.id}
-              customerId={customerId}
-              deviceId={sheet.id}
-              field={field}
-              autoFocus={focus?.id === field.id ? focus.on : undefined}
-              save={save}
-              onChange={(changes) => replace(field.id, changes)}
-              onMoveUp={index > 0 ? () => move(index, -1) : undefined}
-              onMoveDown={index < fields.length - 1 ? () => move(index, 1) : undefined}
-              onDelete={() => remove(field)}
-            />
-          ))}
-        </ol>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => addField()}
-            className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
-          >
-            Agregar campo
-          </button>
-          {suggestions.map((suggestion) => (
+    // Fields and history on the left, images and texts on the right, when wide.
+    <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_26rem]">
+      <div className="flex min-w-0 flex-col gap-3">
+        <section aria-labelledby="sheet-fields" className="flex flex-col gap-2 rounded-sm border border-neutral-300 bg-white p-3">
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <h3 id="sheet-fields" className="font-semibold text-neutral-900">
+              Campos
+            </h3>
+            <p className="text-[13px] text-neutral-600">Libres, sin formato fijo. Agregá los que necesites.</p>
+          </div>
+          {fields.length === 0 && (
+            <p className="text-sm text-neutral-500">
+              Todavía no tiene campos. Agregá los que necesites: no hay ninguno obligatorio.
+            </p>
+          )}
+          <ol className="flex flex-col rounded-sm border border-neutral-200">
+            {fields.map((field, index) => (
+              <FieldRow
+                key={field.id}
+                customerId={customerId}
+                deviceId={sheet.id}
+                field={field}
+                autoFocus={focus?.id === field.id ? focus.on : undefined}
+                save={save}
+                onChange={(changes) => replace(field.id, changes)}
+                onMoveUp={index > 0 ? () => move(index, -1) : undefined}
+                onMoveDown={index < fields.length - 1 ? () => move(index, 1) : undefined}
+                onDelete={() => remove(field)}
+              />
+            ))}
+          </ol>
+          <div className="flex flex-wrap gap-1.5">
             <button
-              key={suggestion.name}
               type="button"
-              onClick={() => addField(suggestion)}
-              aria-label={`Agregar campo ${suggestion.name}`}
-              className="rounded-full border border-dashed border-neutral-400 px-2.5 py-0.5 text-xs text-neutral-700 hover:bg-neutral-100"
+              onClick={() => addField()}
+              className="rounded-sm bg-accent px-3 py-1 text-sm font-semibold text-white hover:bg-accent-strong"
             >
-              + {suggestion.name}
+              Agregar campo
             </button>
-          ))}
-        </div>
-      </section>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.name}
+                type="button"
+                onClick={() => addField(suggestion)}
+                aria-label={`Agregar campo ${suggestion.name}`}
+                className="rounded-sm border border-dashed border-neutral-400 px-2 py-0.5 text-xs text-neutral-700 hover:border-select-line hover:bg-select"
+              >
+                + {suggestion.name}
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <div className="rounded-xl border border-neutral-200 bg-white p-4">
-        <AttachmentGallery
+        <DeviceRecords
           customerId={customerId}
-          deviceId={sheet.id}
-          initial={sheet.attachments}
+          sheet={sheet}
+          save={save}
+          onAlertsChange={onAlertsChange}
         />
       </div>
 
-      <DeviceTexts customerId={customerId} sheet={sheet} save={save} />
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="rounded-sm border border-neutral-300 bg-white p-3">
+          <AttachmentGallery
+            customerId={customerId}
+            deviceId={sheet.id}
+            initial={sheet.attachments}
+          />
+        </div>
 
-      <DeviceRecords
-        customerId={customerId}
-        sheet={sheet}
-        save={save}
-        onAlertsChange={onAlertsChange}
-      />
+        <DeviceTexts customerId={customerId} sheet={sheet} save={save} />
+      </div>
     </div>
   );
 }
@@ -387,22 +401,45 @@ function FieldRow({
   };
 
   return (
-    <li className="flex flex-col gap-1.5 rounded-lg border border-neutral-200 p-2.5">
-      <div className="flex items-center gap-1.5">
-        <input
-          value={name}
-          maxLength={FIELD_NAME_MAX_LENGTH}
-          autoComplete="off"
-          autoFocus={autoFocus === "name"}
-          placeholder="Nombre del campo"
-          aria-label={`Nombre del campo ${label}`}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") commit();
-          }}
-          className={inputClass + " font-medium"}
+    // One row of a property grid: the name on the left, the value on the right.
+    <li className="grid grid-cols-[minmax(7rem,12rem)_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 border-b border-neutral-100 px-2 py-1.5 last:border-b-0 hover:bg-neutral-50">
+      <input
+        value={name}
+        maxLength={FIELD_NAME_MAX_LENGTH}
+        autoComplete="off"
+        autoFocus={autoFocus === "name"}
+        placeholder="Nombre del campo"
+        aria-label={`Nombre del campo ${label}`}
+        onChange={(event) => setName(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") commit();
+        }}
+        className={nameClass}
+      />
+      {field.isSecret ? (
+        <SecretValue
+          customerId={customerId}
+          field={field}
+          name={field.name}
+          label={label}
+          autoFocus={autoFocus === "value"}
+          save={save}
         />
+      ) : (
+        <textarea
+          value={value}
+          maxLength={FIELD_VALUE_MAX_LENGTH}
+          rows={rowsFor(value)}
+          autoFocus={autoFocus === "value"}
+          placeholder="Valor"
+          aria-label={`Valor de ${label}`}
+          onChange={(event) => setValue(event.target.value)}
+          onBlur={commit}
+          className={inputClass + " font-mono"}
+        />
+      )}
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={onMoveUp}
@@ -430,31 +467,7 @@ function FieldRow({
           ×
         </button>
       </div>
-
-      {field.isSecret ? (
-        <SecretValue
-          customerId={customerId}
-          field={field}
-          name={field.name}
-          label={label}
-          autoFocus={autoFocus === "value"}
-          save={save}
-        />
-      ) : (
-        <textarea
-          value={value}
-          maxLength={FIELD_VALUE_MAX_LENGTH}
-          rows={rowsFor(value)}
-          autoFocus={autoFocus === "value"}
-          placeholder="Valor"
-          aria-label={`Valor de ${label}`}
-          onChange={(event) => setValue(event.target.value)}
-          onBlur={commit}
-          className={inputClass + " font-mono"}
-        />
-      )}
-
-      <label className="flex items-center gap-1.5 self-start text-xs text-neutral-700">
+      <label className="col-start-2 flex items-center gap-1.5 self-start text-xs text-neutral-600">
         <input
           type="checkbox"
           checked={field.isSecret}
@@ -463,7 +476,7 @@ function FieldRow({
         Secreto (se guarda cifrado)
       </label>
       {field.draft && !collapseSpaces(name) && (
-        <p className="text-xs text-neutral-500">Poné un nombre para guardarlo.</p>
+        <p className="col-start-2 text-xs text-neutral-500">Poné un nombre para guardarlo.</p>
       )}
     </li>
   );
@@ -635,7 +648,7 @@ function DeviceTexts({
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+    <section className="flex flex-col gap-3 rounded-sm border border-neutral-300 bg-white p-3">
       <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-900">
         Funciones (quién hace qué)
         <textarea

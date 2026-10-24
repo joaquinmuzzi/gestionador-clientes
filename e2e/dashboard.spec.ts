@@ -80,6 +80,31 @@ test("the home page shows the customers and what is pending", async ({ page }) =
   await expect(page.getByRole("dialog", { name: "NAS panel" })).toBeVisible();
 });
 
+test("the tree on the left leads to each customer and its devices", async ({ page }) => {
+  await seed();
+  await login(page);
+  const tree = page.getByRole("tree", { name: "Clientes y dispositivos" });
+  const customer = tree.getByRole("treeitem", { name: /E2E Panel Estudio/ });
+  await expect(customer).toHaveAttribute("aria-expanded", "false");
+  await expect(tree.getByRole("treeitem", { name: "Router panel" })).toHaveCount(0);
+
+  await customer.click();
+  await expect(page.getByRole("heading", { name: "E2E Panel Estudio", exact: true })).toBeVisible();
+  await expect(customer).toHaveAttribute("aria-expanded", "true");
+  await tree.getByRole("treeitem", { name: "NAS panel" }).click();
+  await expect(page.getByRole("dialog", { name: "NAS panel" })).toBeVisible();
+  await expect(tree.getByRole("treeitem", { name: "NAS panel" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
+  // A device added on the map shows up in the tree once it is saved.
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Servidor", exact: true }).click();
+  await expect(page.getByRole("status").first()).toHaveText("Guardado");
+  await expect(tree.getByRole("treeitem", { name: "Servidor", exact: true })).toBeVisible();
+});
+
 test("the map shows each device's address, never a secret one", async ({ page }) => {
   const customer = await seed();
   await login(page);

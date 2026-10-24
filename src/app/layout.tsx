@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Source_Code_Pro, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
 // Self-hosted by Next.js at build time: the browser never asks Google.
-const plexSans = IBM_Plex_Sans({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-plex-sans",
+  weight: ["400", "600", "700"],
+  variable: "--font-source-sans",
 });
-const plexMono = IBM_Plex_Mono({
+const sourceCode = Source_Code_Pro({
   subsets: ["latin"],
   weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  variable: "--font-source-code",
 });
 
 export const metadata: Metadata = {
@@ -24,9 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`h-full antialiased ${plexSans.variable} ${plexMono.variable}`}
+      className={`h-full antialiased ${sourceSans.variable} ${sourceCode.variable}`}
     >
-      <body className="flex min-h-full flex-col bg-neutral-50 font-sans text-neutral-900">
+      <body className="flex min-h-full flex-col bg-chrome font-sans text-[13.5px] text-neutral-900">
         {children}
       </body>
     </html>

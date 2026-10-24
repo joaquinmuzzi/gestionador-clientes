@@ -1,40 +1,60 @@
 @import "tailwindcss";
 
-/* The look of the mock-up shown to Gabriel: cool greys, a navy header and one
-   blue accent. Redefining the neutral scale restyles every screen at once; the
-   500 step is darker than the mock-up's so muted text keeps a 4.5:1 contrast. */
+/* Option D of the interface proposals ("Administrador clásico", chosen by the
+   owner on 2026-10-24): the look of a Windows administration console. Light
+   grey chrome around white panes, square corners, one teal accent, and a pale
+   blue for what is selected, as in Explorer. Redefining the neutral scale and
+   the radii restyles every screen at once; the 500 step keeps muted text at a
+   4.5:1 contrast on white. */
 @theme {
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-source-code), ui-monospace, monospace;
 
-  --color-neutral-50: #f5f6f8;
-  --color-neutral-100: #f1f3f6;
-  --color-neutral-200: #e3e6eb;
-  --color-neutral-300: #dce0e6;
-  --color-neutral-400: #b9c1cd;
-  --color-neutral-500: #687180;
-  --color-neutral-600: #5b6472;
-  --color-neutral-700: #4a5260;
-  --color-neutral-800: #33394a;
-  --color-neutral-900: #14171f;
-  --color-neutral-950: #121722;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
 
-  --color-navy: #121722;
-  --color-navy-soft: #222a3a;
-  --color-navy-line: #2a3346;
-  --color-navy-text: #c9d0db;
-  --color-navy-muted: #8c95a3;
+  --color-neutral-50: #f6f7f9;
+  --color-neutral-100: #eef0f3;
+  --color-neutral-200: #dde1e6;
+  --color-neutral-300: #c5cbd3;
+  --color-neutral-400: #a0a7b0;
+  --color-neutral-500: #68717d;
+  --color-neutral-600: #59616c;
+  --color-neutral-700: #3b434c;
+  --color-neutral-800: #2b3138;
+  --color-neutral-900: #1f2328;
+  --color-neutral-950: #15181c;
 
-  --color-accent: #2457d6;
-  --color-accent-strong: #173e9e;
-  --color-accent-ink: #1d4ab8;
-  --color-accent-soft: #e8eefc;
-  --color-accent-line: #9db4ec;
+  /* The window frame: menu bar, toolbars, tree and status bar. */
+  --color-chrome: #e9ecf0;
+  --color-chrome-light: #f6f7f9;
+  --color-chrome-line: #c5cbd3;
 
-  --color-warn: #d2550f;
-  --color-warn-ink: #9a3c09;
-  --color-warn-soft: #fdebdd;
-  --color-warn-line: #f2c6a5;
-  --color-caution-ink: #7a5200;
-  --color-caution-soft: #fbf1dc;
+  /* What is selected: a tree item, a row, a device on the map. */
+  --color-select: #d4e6fa;
+  --color-select-line: #86b5e6;
+
+  --color-accent: #0b6e74;
+  --color-accent-strong: #08555a;
+  --color-accent-ink: #0a5f64;
+  --color-accent-soft: #e1f0ef;
+  --color-accent-line: #8cc4c1;
+
+  --color-link: #0b62c4;
+
+  /* VPNs and other tunnels on the map. */
+  --color-tunnel: #2563a8;
+  --color-tunnel-ink: #1d4f8a;
+  --color-tunnel-soft: #e8f1fb;
+  --color-tunnel-line: #cfe0f5;
+
+  --color-warn: #b54708;
+  --color-warn-ink: #8f3906;
+  --color-warn-soft: #fdeee3;
+  --color-warn-line: #f1c39f;
+  --color-caution-ink: #8a4a06;
+  --color-caution-soft: #fdf1e0;
 }

@@ -18,7 +18,7 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import { useCallback, useRef, useState, type DragEvent } from "react";
-import { DeviceIcon } from "@/components/device-icon";
+import { DeviceIcon, deviceTint } from "@/components/device-icon";
 import { collapseSpaces } from "@/lib/customers/input";
 import type { DeviceAlerts } from "@/lib/devices/records";
 import {
@@ -283,7 +283,7 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
     <div className="flex h-full min-h-0 flex-col">
       <aside
         aria-label="Agregar dispositivo"
-        className="flex flex-wrap items-center gap-1.5 border-b border-neutral-200 px-3 py-2 text-sm"
+        className="flex flex-wrap items-center gap-0.5 border-b border-neutral-300 bg-chrome-light px-2 py-1 text-[13px]"
       >
         <span className="mr-1 text-neutral-600" title="Click o arrastrá al mapa">
           Agregar:
@@ -298,9 +298,11 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
               event.dataTransfer.effectAllowed = "copy";
             }}
             onClick={() => addAtCentre(type)}
-            className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1 text-neutral-900 hover:border-accent-line hover:bg-accent-soft"
+            className="flex items-center gap-1.5 rounded-sm border border-transparent px-2 py-0.5 text-neutral-900 hover:border-select-line hover:bg-select"
           >
-            <DeviceIcon type={type} className="size-4 shrink-0" />
+            <span style={{ color: deviceTint(type).ink }} className="inline-grid">
+              <DeviceIcon type={type} className="size-4 shrink-0" />
+            </span>
             {DEVICE_TYPE_LABELS[type]}
           </button>
         ))}
@@ -308,7 +310,7 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
 
       <div
         ref={canvas}
-        className="relative min-h-0 flex-1 bg-[#fbfbfc]"
+        className="relative min-h-0 flex-1 bg-white"
         onDragOver={(event) => {
           if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
           event.preventDefault();
@@ -341,9 +343,9 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
           ariaLabelConfig={ariaLabelConfig}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#d5dae1" />
+          <Background variant={BackgroundVariant.Lines} gap={40} color="#f0f2f5" />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable nodeColor="#c7d5f6" nodeBorderRadius={6} />
+          <MiniMap pannable zoomable nodeColor="#c5cbd3" nodeBorderRadius={2} />
         </ReactFlow>
 
         {nodes.length === 0 && (
@@ -395,12 +397,12 @@ function Editor({ customerId, map, focusDeviceId = null }: EditorProps) {
 }
 
 const panelClass =
-  "flex w-64 flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-md";
+  "flex w-64 flex-col gap-2.5 rounded-sm border border-neutral-300 bg-white p-3 shadow-sm";
 const fieldClass =
-  "w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 " +
-  "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+  "w-full rounded-sm border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 " +
+  "focus:border-select-line focus:outline-none focus:ring-1 focus:ring-select-line";
 const deleteButtonClass =
-  "self-start rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50";
+  "self-start rounded-sm border border-red-300 px-3 py-0.5 text-sm text-red-700 hover:bg-red-50";
 
 // The name is saved when the field loses focus or on Enter; the map shows it
 // while it is typed. An empty name goes back to the last one saved.
@@ -470,7 +472,7 @@ function DevicePanel({
       <button
         type="button"
         onClick={onOpen}
-        className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
+        className="rounded-sm bg-accent px-3 py-1 text-sm font-semibold text-white hover:bg-accent-strong"
       >
         Abrir ficha
       </button>
@@ -534,13 +536,13 @@ function ConnectionPanel({
 // What the colours and lines on the map mean.
 function MapLegend() {
   return (
-    <div className="pointer-events-none absolute bottom-3 left-14 z-[5] hidden flex-wrap gap-3.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] text-neutral-700 sm:flex">
+    <div className="pointer-events-none absolute bottom-3 left-14 z-[5] hidden flex-wrap gap-3.5 rounded-sm border border-neutral-300 bg-white px-2.5 py-1 text-[11px] text-neutral-700 sm:flex">
       <span className="flex items-center gap-1.5">
-        <span className="w-4 border-t-2 border-[#9aa3b0]" />
+        <span className="w-4 border-t-2 border-[#8a939e]" />
         Cable
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="w-4 border-t-2 border-dashed border-accent" />
+        <span className="w-4 border-t-2 border-dashed border-tunnel" />
         VPN
       </span>
       <span className="flex items-center gap-1.5">

@@ -12,8 +12,8 @@ export const metadata: Metadata = { title: "Buscar · Gestionador de Clientes" }
 // The term is typed in the search box of the header (src/app/(app)/search-box.tsx).
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold">Buscar</h1>
+    <div className="max-w-3xl">
+      <h1 className="text-lg font-semibold">Buscar</h1>
       <Suspense fallback={<p className="mt-4 text-neutral-500">Buscando…</p>}>
         {searchParams.then(({ q }) => (
           <Results raw={typeof q === "string" ? q : ""} />

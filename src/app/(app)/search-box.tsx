@@ -5,12 +5,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { SEARCH_MAX_LENGTH } from "@/lib/search/input";
 
-// Dark, to sit in the navy header.
+// A plain box in the toolbar.
 const inputClass =
-  "w-full rounded-lg border border-transparent bg-navy-soft px-3 py-1.5 text-sm text-white " +
-  "placeholder:text-navy-muted focus:border-accent-line focus:outline-none";
+  "h-7 w-full rounded-sm border border-chrome-line bg-white px-2 text-[13px] text-neutral-900 " +
+  "placeholder:text-neutral-500 focus:border-select-line focus:outline-none focus:ring-1 " +
+  "focus:ring-select-line";
 
-const placeholder = "Buscar nombre, IP, texto… (Ctrl+K)";
+const placeholder = "Buscar en todos los clientes: nombre, IP, campo… (Ctrl+K)";
 
 // The global search, on every page. Ctrl+K (⌘K on a Mac) jumps to it from
 // anywhere, the map included. It reads the URL, so the layout renders it inside
