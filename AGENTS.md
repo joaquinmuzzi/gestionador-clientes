@@ -22,9 +22,6 @@ customer's infrastructure **as a map**, in the spirit of Cisco Packet Tracer but
 not for simulating. The goal is to take out of the technician's head everything they have to
 remember today: IP addresses, long passwords, configurations, backups, who does what.
 
-The idea comes from Gabriel Natalucci, the technician who will use it. The owner and developer is
-Joaquín (`joaquinmuzzi`); every change goes through a pull request.
-
 Principles (non-negotiable):
 
 1. **Map first.** A customer's main screen is its network diagram; double-clicking a device opens
